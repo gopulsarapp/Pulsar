@@ -1,0 +1,297 @@
+/*
+=====================================================
+  CONTENTFUL.JS
+  This file fetches all content from Contentful
+  and injects it into the page.
+=====================================================
+*/
+
+// (function () { // Uncomment this line to wrap the code in a private scope
+  "use strict";
+
+  // --- 1. CONFIGURATION ---
+  // Replace with your own Contentful Space ID and Access Token
+  const CONTENTFUL_SPACE_ID = 'mc1xdogpqbyd';
+  const CONTENTFUL_ACCESS_TOKEN = 'CZjD6ZuG0hsFUL_vG2PwD_udCAy2HgQFOp9Y_Y_241E';
+
+  // Check for configuration errors
+  if (CONTENTFUL_SPACE_ID === 'YOUR_SPACE_ID' || CONTENTFUL_ACCESS_TOKEN === 'YOUR_CONTENT_DELIVERY_API_TOKEN') {
+    console.error("Contentful credentials are not set. Please update assets/js/contentful.js");
+  }
+
+  // --- 2. INITIALIZE CONTENTFUL CLIENT ---
+  const client = contentful.createClient({
+    space: CONTENTFUL_SPACE_ID,
+    accessToken: CONTENTFUL_ACCESS_TOKEN,
+  });
+
+  // --- 3. HELPER FUNCTIONS ---
+  
+  /**
+   * Safely gets a file URL from a Contentful media asset.
+   * @param {object} mediaField - The Contentful media field.
+   * @returns {string} - The URL or an empty string.
+   */
+  const getImageUrl = (mediaField) => {
+    if (mediaField && mediaField.fields && mediaField.fields.file && mediaField.fields.file.url) {
+      return mediaField.fields.file.url;
+    }
+    return '';
+  };
+  
+  // --- 4. FETCH & RENDER FUNCTIONS ---
+
+  /**
+   * Fetches the Global Config (logo, nav, title).
+   */
+  async function fetchGlobalConfig() {
+    try {
+      const entries = await client.getEntries({
+        content_type: 'globalSiteConfig',
+        limit: 1, // We only ever want one config entry
+        include: 2  // Include 2 levels deep to get the linked nav items
+      });
+
+      if (!entries.items || entries.items.length === 0) {
+        console.error("No 'globalConfig' entry found in Contentful.");
+        return;
+      }
+
+      const config = entries.items[0].fields;
+
+      // 4.1. Set Page Title & Favicon
+      if (config.siteTitle) {
+        document.title = config.siteTitle;
+      }
+      const favicon = document.getElementById('favicon');
+      if (favicon && config.favicon) {
+        favicon.href = getImageUrl(config.favicon);
+      }
+
+      // 4.2. Set Logos
+      const logoLight = document.getElementById('logo-light');
+      if (logoLight && config.logoLight) {
+        logoLight.src = getImageUrl(config.logoLight);
+      }
+      const logoDark = document.getElementById('logo-dark');
+      if (logoDark && config.logoDark) {
+        logoDark.src = getImageUrl(config.logoDark);
+      }
+
+      // 4.3. Build Main Navigation
+      const navUl = document.getElementById('main-nav-ul');
+      if (navUl && config.mainNavigation) {
+        navUl.innerHTML = ''; // Clear static content
+        config.mainNavigation.forEach(navLink => {
+          if (navLink && navLink.fields) {
+            const fields = navLink.fields;
+            const li = document.createElement('li');
+            li.className = 'nav__item';
+            
+            const a = document.createElement('a');
+            a.href = fields.url || '#';
+            a.className = 'nav__item-link';
+            if (fields.isActive) {
+              a.classList.add('active');
+            }
+            a.textContent = fields.text || '';
+            
+            li.appendChild(a);
+            navUl.appendChild(li);
+          }
+        });
+      }
+
+    } catch (error) {
+      console.error("Error fetching global config:", error);
+    }
+  }
+
+  /**
+   * Fetches the Hero Slider section.
+   */
+  async function fetchHeroSlider() {
+    try {
+      const entries = await client.getEntries({
+        content_type: 'pageSectionHero',
+        limit: 1, // Only one Hero section
+        include: 2 // Get the linked 'heroSlide' entries
+      });
+
+      if (!entries.items || entries.items.length === 0) {
+        console.error("No 'pageSectionHero' entry found in Contentful.");
+        return;
+      }
+
+      const heroSection = entries.items[0].fields;
+      const sliderContainer = document.getElementById('hero-slider-container');
+
+      if (!sliderContainer || !heroSection.slides) {
+        return;
+      }
+
+      sliderContainer.innerHTML = ''; // Clear static slides
+
+      heroSection.slides.forEach(slide => {
+        if (slide && slide.fields) {
+          const fields = slide.fields;
+          const imageUrl = getImageUrl(fields.backgroundImage);
+
+          // Create the slide element based on the *exact* HTML structure
+          const slideDiv = document.createElement('div');
+          slideDiv.className = 'slide-item align-v-h';
+          
+          slideDiv.innerHTML = `
+            <div class="bg-img" style="background-image: url('${imageUrl}');"></div>
+            <div class="container">
+              <div class="row align-items-center">
+                <div class="col-sm-12 col-md-12 col-lg-12 col-xl-7">
+                  <div class="slide__content">
+                    <span class="slide__subtitle">${fields.subtitle || ''}</span>
+                    <h2 class="slide__title">${fields.title || ''}</h2>
+                    <p class="slide__desc">${fields.description || ''}</p>
+                    <div class="d-flex flex-wrap align-items-center">
+                      <a href="${fields.buttonUrl || '#'}" class="btn btn__secondary btn__rounded mr-30">
+                        <span>${fields.buttonText || 'Learn More'}</span>
+                        <i class="icon-arrow-right"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+          sliderContainer.appendChild(slideDiv);
+        }
+      });
+
+    } catch (error) {
+      console.error("Error fetching hero slider:", error);
+    }
+  }
+
+  /**
+   * Fetches the Features Carousel section.
+   * NOTE: This version omits the icon as requested.
+   */
+  async function fetchFeaturesCarousel() {
+    try {
+      const entries = await client.getEntries({
+        content_type: 'pageSectionFeatures',
+        limit: 1,
+        include: 2 // Get the linked 'featureItem' entries
+      });
+
+      if (!entries.items || entries.items.length === 0) {
+        console.error("No 'pageSectionFeatures' entry found in Contentful.");
+        return;
+      }
+
+      const featuresSection = entries.items[0].fields;
+      const carouselContainer = document.getElementById('features-carousel-container');
+      
+      if (!carouselContainer || !featuresSection.features) {
+        return;
+      }
+
+      carouselContainer.innerHTML = ''; // Clear static features
+
+      featuresSection.features.forEach(item => {
+        if (item && item.fields) {
+          const fields = item.fields;
+          
+          // Create the feature element.
+          // The 'feature__icon' div is intentionally left out, as requested.
+          const featureDiv = document.createElement('div');
+          featureDiv.className = 'feature-item d-flex';
+          
+          featureDiv.innerHTML = `
+            <div class="feature__content">
+              <h4 class="feature__title">${fields.title || ''}</h4>
+              <p class="feature__desc">${fields.description || ''}</p>
+              <a href="${fields.linkUrl || '#'}" class="btn btn__link btn__secondary">
+                <span>${fields.linkText || 'Read More'}</span>
+                <i class="icon-arrow-right"></i>
+              </a>
+            </div>
+          `;
+          carouselContainer.appendChild(featureDiv);
+        }
+      });
+
+    } catch (error) {
+      console.error("Error fetching features carousel:", error);
+    }
+  }
+
+  // --- 5. INITIALIZATION ---
+  
+  /**
+   * Main function to fetch all content when the page loads.
+   * We use DOMContentLoaded to ensure the HTML elements are ready to be targeted.
+   * This script should run *before* main.js so content is in place
+   * before Slick carousels are initialized.
+   */
+  document.addEventListener('DOMContentLoaded', () => {
+    // Show a loading state if you want
+    // document.body.style.opacity = 0.5; 
+
+    // Fetch all content
+    Promise.all([
+      fetchGlobalConfig(),
+      fetchHeroSlider(),
+      fetchFeaturesCarousel()
+      // Add more fetch functions here for other sections
+    ]).then(() => {
+        console.log("All Contentful content loaded successfully.");
+
+    // --- CAROUSEL FIX START ---
+    // We need to explicitly re-initialize Slick carousels AFTER
+    // the dynamic content has been injected into the DOM.
+
+    // 1. Re-initialize Hero Slider
+    const $heroSlider = $('#hero-slider-container');
+    if ($heroSlider.length > 0 && typeof $heroSlider.slick === 'function') {
+      const heroOptions = $heroSlider.data('slick'); // Get options from data attribute
+      // Destroy if already initialized (likely failed initialization from main.js)
+      if ($heroSlider.hasClass('slick-initialized')) {
+        $heroSlider.slick('unslick');
+      }
+      // Initialize with fetched content
+      $heroSlider.slick(heroOptions);
+      console.log("Hero slider re-initialized.");
+    } else {
+      console.log("Hero slider element not found or Slick not loaded for it.");
+    }
+
+    // 2. Re-initialize Features Carousel
+    const $featuresSlider = $('#features-carousel-container');
+    if ($featuresSlider.length > 0 && typeof $featuresSlider.slick === 'function') {
+      const featureOptions = $featuresSlider.data('slick'); // Get options from data attribute
+       // Destroy if already initialized
+      if ($featuresSlider.hasClass('slick-initialized')) {
+        $featuresSlider.slick('unslick');
+      }
+       // Initialize with fetched content
+      $featuresSlider.slick(featureOptions);
+      console.log("Features carousel re-initialized."); // <-- Check browser console for this message
+    } else {
+       console.log("Features carousel element not found or Slick not loaded for it."); // <-- Or this one
+    }
+
+    // Add similar blocks here if/when you make other carousels dynamic
+
+    // --- CAROUSEL FIX END ---
+
+    // Optional: Hide preloader or show page content if needed
+    // $(".preloader").remove(); // Example if you want to remove preloader here
+
+  }).catch(error => {
+    console.error("An error occurred during Contentful fetching or processing:", error);
+    // Handle errors, maybe show a message to the user
+    // $(".preloader").remove(); // Ensure preloader is removed even on error
+  });
+
+  });
+
+// })(); // Uncomment this line if you uncommented the first line
