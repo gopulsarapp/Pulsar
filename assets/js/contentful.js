@@ -510,6 +510,79 @@
     }
   }
 
+
+  async function fetchContactSection() {
+    try {
+      const entries = await client.getEntries({
+        content_type: 'pageSectionContact',
+        limit: 1,
+        include: 1 // Only need 1 level deep for this section
+      });
+
+      if (!entries.items || entries.items.length === 0) {
+        console.warn("No 'pageSectionContact' entry found in Contentful.");
+        // Optional: Hide section
+        // const sectionElement = document.getElementById('contact-layout5-section');
+        // if (sectionElement) sectionElement.style.display = 'none';
+        return;
+      }
+
+      const fields = entries.items[0].fields;
+
+      // Set Background Image
+      const sectionElement = document.getElementById('contact-layout5-section');
+      if (sectionElement && fields.backgroundImage) {
+        const bgImageUrl = getImageUrl(fields.backgroundImage);
+        if (bgImageUrl) {
+          // The template uses a nested div, but also applies styles directly. Let's try direct.
+          sectionElement.style.backgroundImage = `url(${bgImageUrl})`;
+          sectionElement.style.backgroundRepeat = 'no-repeat'; // Add this line
+            sectionElement.style.backgroundSize = 'cover';     // Add this line
+            sectionElement.style.backgroundPosition = 'center center';
+          // Ensure the overlay class remains if needed
+          sectionElement.classList.add('bg-overlay', 'bg-overlay-blue-gradient'); 
+        }
+      }
+
+      // Update Heading Area (Left Side)
+      const heading = document.getElementById('contact-l5-heading');
+      if (heading) heading.textContent = fields.heading || '';
+
+      const description = document.getElementById('contact-l5-desc');
+      if (description) description.textContent = fields.description || '';
+
+      // Update List Items (Left Side)
+      const listUl = document.getElementById('contact-l5-list');
+      if (listUl && fields.listItems && fields.listItems.length > 0) {
+        listUl.innerHTML = ''; // Clear static list
+        fields.listItems.forEach(itemText => {
+          const li = document.createElement('li');
+          li.textContent = itemText;
+          listUl.appendChild(li);
+        });
+      } else if (listUl) {
+         listUl.innerHTML = ''; // Clear if no items
+      }
+
+      // Update Contact Form Text (Right Side)
+      const formTitle = document.getElementById('contact-l5-form-title');
+      if (formTitle) formTitle.textContent = fields.formTitle || '';
+
+      const formDesc = document.getElementById('contact-l5-form-desc');
+      if (formDesc) formDesc.textContent = fields.formDescription || '';
+
+      const formButton = document.getElementById('contact-l5-form-button');
+      if (formButton) {
+          const buttonSpan = formButton.querySelector('span');
+          if (buttonSpan) buttonSpan.textContent = fields.formSubmitButtonText || 'Submit Request';
+          // Keep the arrow icon
+      }
+
+    } catch (error) {
+      console.error("Error fetching Contact Layout 5 section:", error);
+    }
+  }
+
   // --- 5. INITIALIZATION ---
   
   /**
@@ -529,7 +602,8 @@
     fetchFeaturesCarousel(),
     fetchAboutImageSection(),
     fetchFeaturesLayout1Section(),
-    fetchWorkProcessSection()
+    fetchWorkProcessSection(),
+    fetchContactSection(),
       // Add more fetch functions here for other sections
     ]).then(() => {
         console.log("All Contentful content loaded successfully.");
