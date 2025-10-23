@@ -224,6 +224,64 @@
     }
   }
 
+  /**
+   * Fetches the About (with Image) section ('About Layout 4' in HTML).
+   */
+  async function fetchAboutImageSection() {
+    try {
+      const entries = await client.getEntries({
+        content_type: 'pageSectionAboutImage', // Make sure this API ID matches your Contentful model
+        limit: 1
+      });
+
+      if (!entries.items || entries.items.length === 0) {
+        console.warn("No 'pageSectionAboutImage' entry found in Contentful.");
+        // Optional: Hide the section if no content is found
+        const sectionElement = document.getElementById('about-layout4-section');
+        if (sectionElement) sectionElement.style.display = 'none';
+        return;
+      }
+
+      const fields = entries.items[0].fields;
+
+      // Update Text Content
+      const heading = document.getElementById('about-heading');
+      if (heading) heading.textContent = fields.heading || '';
+
+      const p1 = document.getElementById('about-p1');
+      if (p1) p1.textContent = fields.paragraph1 || '';
+
+      const p2 = document.getElementById('about-p2');
+      if (p2) p2.textContent = fields.paragraph2 || '';
+
+      // --- IMAGE HANDLING ---
+      const imageContainer = document.getElementById('about-image-container'); // Target the container div
+      const imageElement = document.getElementById('about-image'); // Target the img tag
+      
+      if (imageContainer && imageElement && fields.image) {
+        const imageUrl = getImageUrl(fields.image); // Use helper function
+        if (imageUrl) {
+            imageElement.src = imageUrl;
+            // Set alt text from image description or fallback to heading
+            imageElement.alt = fields.image.fields?.description || fields.heading || 'About section image';
+            imageElement.style.borderRadius = '15px';
+            imageContainer.style.display = ''; // Ensure container is visible
+        } else {
+            // Hide the image and container if image URL is invalid
+            console.warn("Image found in Contentful but URL is missing.");
+            imageContainer.style.display = 'none';
+        }
+      } else if (imageContainer) {
+         // Hide container if no image field in Contentful or elements not found in HTML
+         imageContainer.style.display = 'none';
+      }
+      // --- END IMAGE HANDLING ---
+
+    } catch (error) {
+      console.error("Error fetching about image section:", error);
+    }
+  }
+
   // --- 5. INITIALIZATION ---
   
   /**
@@ -239,8 +297,9 @@
     // Fetch all content
     Promise.all([
       fetchGlobalConfig(),
-      fetchHeroSlider(),
-      fetchFeaturesCarousel()
+    fetchHeroSlider(),
+    fetchFeaturesCarousel(),
+    fetchAboutImageSection()
       // Add more fetch functions here for other sections
     ]).then(() => {
         console.log("All Contentful content loaded successfully.");
