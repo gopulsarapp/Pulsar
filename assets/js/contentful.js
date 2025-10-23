@@ -282,6 +282,116 @@
     }
   }
 
+  async function fetchFeaturesLayout1Section() {
+    try {
+      const entries = await client.getEntries({
+        content_type: 'pageSectionFeaturesLayout1', // API ID of the section model
+        limit: 1,
+        include: 2 // Include linked feature items
+      });
+
+      if (!entries.items || entries.items.length === 0) {
+        console.warn("No 'pageSectionFeaturesLayout1' entry found in Contentful.");
+        // Optional: Hide section
+        // const sectionElement = document.getElementById('features-layout1-section');
+        // if (sectionElement) sectionElement.style.display = 'none';
+        return;
+      }
+
+      const fields = entries.items[0].fields;
+
+      // Set Background Image (Targeting the parent section)
+      const sectionElement = document.getElementById('features-layout1-section');
+      if (sectionElement && fields.backgroundImage) {
+        const bgImageUrl = getImageUrl(fields.backgroundImage);
+        if (bgImageUrl) {
+          // The template uses a nested div for the bg-img, apply style to parent
+          sectionElement.style.backgroundImage = `url(${bgImageUrl})`;
+          // Add classes needed by the template's CSS for positioning/overlay
+          sectionElement.classList.add('bg-img'); 
+        }
+      }
+
+      // Update Heading
+      const heading = document.getElementById('features-l1-heading');
+      if (heading) heading.textContent = fields.mainHeading || '';
+
+      // Update Description
+      const description = document.getElementById('features-l1-desc');
+      if (description) description.textContent = fields.description || '';
+
+      // Update Button
+      const button = document.getElementById('features-l1-button');
+      if (button) {
+        const buttonSpan = button.querySelector('span');
+        if (buttonSpan) buttonSpan.textContent = fields.buttonText || 'Learn More';
+        button.href = fields.buttonUrl || '#';
+      }
+
+      // Update Footer Text and Link
+      const footerTextElement = document.getElementById('features-l1-footer-text');
+      if (footerTextElement) {
+          // Clear existing content first
+          footerTextElement.innerHTML = ''; 
+          // Add the main text
+          footerTextElement.appendChild(document.createTextNode(fields.footerText || '')); 
+          
+          // Add the link if text and URL exist
+          if (fields.footerLinkText && fields.footerLinkUrl) {
+              footerTextElement.appendChild(document.createTextNode(' ')); // Add space before link
+              const footerLink = document.createElement('a');
+              footerLink.href = fields.footerLinkUrl;
+              footerLink.className = 'color-secondary'; // Match template style
+              footerLink.innerHTML = `
+                  <span>${fields.footerLinkText}</span> <i class="icon-arrow-right"></i>
+              `;
+              footerTextElement.appendChild(footerLink);
+          }
+      }
+
+      // Generate Feature Items
+      const itemsContainer = document.getElementById('features-l1-items-container');
+      if (itemsContainer && fields.featureItems) {
+        itemsContainer.innerHTML = ''; // Clear static items
+        fields.featureItems.forEach(item => {
+          if (item && item.fields) {
+            const itemFields = item.fields;
+            const colDiv = document.createElement('div');
+            colDiv.className = 'col-sm-6 col-md-6 col-lg-3'; // Use template's column classes
+            
+            const iconUrl = itemFields.icon ? getImageUrl(itemFields.icon) : '';
+            const iconAlt = itemFields.icon?.fields?.description || itemFields.title || 'Feature icon'; // Alt text
+            const iconSize = '50px'; // Define desired icon size (adjust as needed)
+
+            // Recreate the HTML structure using an <img> tag for the SVG
+            colDiv.innerHTML = `
+              <div class="feature-item">
+                <div class="feature__content">
+                  <div class="feature__icon">
+                    ${iconUrl ? 
+                      `<img 
+                         src="${iconUrl}" 
+                         alt="${iconAlt}" 
+                         style="width: ${iconSize}; height: ${iconSize}; object-fit: contain;"
+                       >` : 
+                      '<span style="display: inline-block; width: 50px; height: 50px;"></span>' // Placeholder if no icon
+                    }
+
+                    </div>
+                  <h4 class="feature__title">${itemFields.title || ''}</h4>
+                </div><a href="${itemFields.linkUrl || '#'}" class="btn__link">
+                  <i class="icon-arrow-right icon-outlined"></i> </a>
+              </div>`;
+            itemsContainer.appendChild(colDiv);
+          }
+        });
+      }
+
+    } catch (error) {
+      console.error("Error fetching Features Layout 1 section:", error);
+    }
+  }
+
   // --- 5. INITIALIZATION ---
   
   /**
@@ -299,7 +409,8 @@
       fetchGlobalConfig(),
     fetchHeroSlider(),
     fetchFeaturesCarousel(),
-    fetchAboutImageSection()
+    fetchAboutImageSection(),
+    fetchFeaturesLayout1Section()
       // Add more fetch functions here for other sections
     ]).then(() => {
         console.log("All Contentful content loaded successfully.");
