@@ -392,6 +392,124 @@
     }
   }
 
+
+  async function fetchWorkProcessSection() {
+    try {
+      const entries = await client.getEntries({
+        content_type: 'pageSectionWorkProcess',
+        limit: 1,
+        include: 2 // Include linked process items
+      });
+
+      if (!entries.items || entries.items.length === 0) {
+        console.warn("No 'pageSectionWorkProcess' entry found in Contentful.");
+        // Optional: Hide section
+        // const sectionElement = document.getElementById('work-process-section');
+        // if (sectionElement) sectionElement.style.display = 'none';
+        return;
+      }
+
+      const fields = entries.items[0].fields;
+
+      // Set Background Image (Targeting the parent section)
+      const sectionElement = document.getElementById('work-process-section');
+      if (sectionElement && fields.backgroundImage) {
+        const bgImageUrl = getImageUrl(fields.backgroundImage);
+        if (bgImageUrl) {
+          // Apply directly to the section tag which has the bg-img class in the original HTML
+          sectionElement.style.backgroundImage = `url(${bgImageUrl})`;
+        }
+      }
+
+      // Update Heading Area
+      const subtitle = document.getElementById('work-process-subtitle');
+      if (subtitle) subtitle.textContent = fields.subtitle || '';
+
+      const title = document.getElementById('work-process-title');
+      if (title) title.textContent = fields.title || '';
+
+      const description = document.getElementById('work-process-desc');
+      if (description) description.textContent = fields.description || '';
+
+      // Update List Items
+      const listUl = document.getElementById('work-process-list');
+      if (listUl && fields.listItems && fields.listItems.length > 0) {
+        listUl.innerHTML = ''; // Clear static list
+        fields.listItems.forEach(itemText => {
+          const li = document.createElement('li');
+          li.textContent = itemText;
+          listUl.appendChild(li);
+        });
+      } else if (listUl) {
+         listUl.innerHTML = ''; // Clear if no items
+      }
+
+      // Generate Process Steps Carousel Items
+      const stepsContainer = document.getElementById('work-process-steps-container');
+      if (stepsContainer && fields.processSteps) {
+        stepsContainer.innerHTML = ''; // Clear static items
+        fields.processSteps.forEach(item => {
+          if (item && item.fields) {
+            const itemFields = item.fields;
+            const stepDiv = document.createElement('div'); // Slick needs direct children
+            // Recreate the exact HTML structure for a process item
+            const iconUrl = itemFields.icon ? getImageUrl(itemFields.icon) : '';
+          const iconAlt = itemFields.icon?.fields?.description || itemFields.title || 'Process step icon';
+          const iconSize = '55px'; // Match original CSS icon size - adjust if needed
+
+          // Recreate the HTML structure using an <img> tag for the SVG
+          stepDiv.innerHTML = `
+            <div class="process-item">
+              <span class="process__number">${itemFields.stepNumber || ''}</span>
+              <div class="process__icon">
+                ${iconUrl ? 
+                  `<img 
+                     src="${iconUrl}" 
+                     alt="${iconAlt}" 
+                     style="width: ${iconSize}; height: ${iconSize}; object-fit: contain;"
+                   >` : 
+                  '<span style="display: inline-block; width: 55px; height: 55px;"></span>' // Placeholder
+                }
+              </div><h4 class="process__title pt-20">${itemFields.title || ''}</h4>
+              <p class="process__desc">${itemFields.description || ''}</p>
+              <a href="${itemFields.linkUrl || '#'}" class="btn btn__secondary btn__link">
+                <span>${itemFields.linkText || 'Learn More'}</span>
+                <i class="icon-arrow-right"></i> </a>
+            </div>`;
+          stepsContainer.appendChild(stepDiv);
+          }
+        });
+      }
+
+      // Update CTA Banner
+      const ctaImage = document.getElementById('work-process-cta-image');
+      if (ctaImage && fields.ctaImage) {
+          const ctaImageUrl = getImageUrl(fields.ctaImage);
+          ctaImage.src = ctaImageUrl || '';
+          ctaImage.alt = fields.ctaImage.fields?.description || 'CTA Icon';
+      } else if (ctaImage) {
+          ctaImage.src = ''; // Clear if no image
+          ctaImage.alt = '';
+      }
+
+      const ctaTitle = document.getElementById('work-process-cta-title');
+      if (ctaTitle) ctaTitle.textContent = fields.ctaTitle || '';
+
+      const ctaDesc = document.getElementById('work-process-cta-desc');
+      if (ctaDesc) ctaDesc.textContent = fields.ctaDescription || '';
+
+      const ctaButton = document.getElementById('work-process-cta-button');
+      if (ctaButton) {
+        const ctaButtonSpan = ctaButton.querySelector('span');
+        if (ctaButtonSpan) ctaButtonSpan.textContent = fields.ctaButtonText || 'Learn More';
+        ctaButton.href = fields.ctaButtonUrl || '#';
+      }
+
+    } catch (error) {
+      console.error("Error fetching Work Process section:", error);
+    }
+  }
+
   // --- 5. INITIALIZATION ---
   
   /**
@@ -410,7 +528,8 @@
     fetchHeroSlider(),
     fetchFeaturesCarousel(),
     fetchAboutImageSection(),
-    fetchFeaturesLayout1Section()
+    fetchFeaturesLayout1Section(),
+    fetchWorkProcessSection()
       // Add more fetch functions here for other sections
     ]).then(() => {
         console.log("All Contentful content loaded successfully.");
@@ -448,6 +567,19 @@
     } else {
        console.log("Features carousel element not found or Slick not loaded for it."); // <-- Or this one
     }
+
+    // 3. Re-initialize Work Process Carousel
+    const $workProcessSlider = $('#work-process-steps-container');
+      if ($workProcessSlider.length > 0 && typeof $workProcessSlider.slick === 'function') {
+        const workProcessOptions = $workProcessSlider.data('slick'); // Get options
+        if ($workProcessSlider.hasClass('slick-initialized')) {
+          $workProcessSlider.slick('unslick'); // Destroy if needed
+        }
+        $workProcessSlider.slick(workProcessOptions); // Initialize
+        console.log("Work Process carousel re-initialized.");
+      } else {
+         console.log("Work Process carousel element not found or Slick not loaded for it.");
+      }
 
     // Add similar blocks here if/when you make other carousels dynamic
 
