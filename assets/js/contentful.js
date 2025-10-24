@@ -180,6 +180,23 @@
       if (cookiesLink && config.footerCookiesLinkUrl) cookiesLink.href = config.footerCookiesLinkUrl;
       else if (cookiesLink) cookiesLink.parentElement.style.display = 'none';
 
+      // --- 4.5 Populate Header Button ---
+      const headerButton = document.getElementById('header-appointment-btn');
+      if (headerButton && config.headerButtonText && config.headerButtonUrl) {
+        const btnSpan = headerButton.querySelector('span');
+        if (btnSpan) btnSpan.textContent = config.headerButtonText;
+        headerButton.href = config.headerButtonUrl;
+        // Ensure the button container is visible (it has d-none initially)
+        const btnContainer = headerButton.closest('.d-xl-flex'); // Find the parent container
+         if(btnContainer){
+            btnContainer.classList.remove('d-none'); // Make it visible on xl+ screens
+         }
+      } else if (headerButton) {
+          // Optionally hide the button's container if no data
+          const btnContainer = headerButton.closest('.d-xl-flex');
+          if(btnContainer) btnContainer.style.display = 'none';
+      }
+
     } catch (error) {
       console.error("Error fetching global config:", error);
     }
