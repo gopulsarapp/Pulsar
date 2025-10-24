@@ -662,6 +662,59 @@
     }
   }
 
+  async function fetchGallerySection() {
+    try {
+      const entries = await client.getEntries({
+        content_type: 'pageSectionGallery',
+        limit: 1,
+        include: 2 // Include linked galleryImage entries
+      });
+
+      if (!entries.items || entries.items.length === 0) {
+        console.warn("No 'pageSectionGallery' entry found in Contentful.");
+        // Optional: Hide section
+        // const sectionElement = document.getElementById('gallery-section');
+        // if (sectionElement) sectionElement.style.display = 'none';
+        return;
+      }
+
+      const fields = entries.items[0].fields;
+      const galleryContainer = document.getElementById('gallery-carousel-container');
+
+      if (!galleryContainer || !fields.images) {
+        console.error("Gallery container or images not found.");
+         if(galleryContainer) galleryContainer.innerHTML = ''; // Clear if container exists but no images
+        return;
+      }
+
+      galleryContainer.innerHTML = ''; // Clear static items
+
+      // Generate Gallery Items
+      fields.images.forEach(item => {
+        if (item && item.fields && item.fields.imageFile) {
+          const itemFields = item.fields;
+          const imageUrl = getImageUrl(itemFields.imageFile);
+          const altText = itemFields.altText || itemFields.imageFile.fields?.description || 'Gallery image';
+          
+          if (imageUrl) {
+            // Recreate the exact 'a' tag structure for Slick and Magnific Popup
+            const linkElement = document.createElement('a');
+            linkElement.className = 'popup-gallery-item'; // Class needed for Magnific Popup
+            linkElement.href = imageUrl; // Link to the full image for popup
+            
+            linkElement.innerHTML = `
+              <img src="${imageUrl}" alt="${altText}">
+            `;
+            galleryContainer.appendChild(linkElement);
+          }
+        }
+      });
+
+    } catch (error) {
+      console.error("Error fetching Gallery section:", error);
+    }
+  }
+
   // --- 5. INITIALIZATION ---
   
   /**
@@ -683,7 +736,8 @@
     fetchFeaturesLayout1Section(),
     fetchWorkProcessSection(),
     fetchContactSection(),
-    fetchTestimonialsSection()
+    fetchTestimonialsSection(),
+    fetchGallerySection()
       // Add more fetch functions here for other sections
     ]).then(() => {
         console.log("All Contentful content loaded successfully.");
@@ -743,51 +797,85 @@
           // Ensure both elements exist AND Slick function is available
           if ($quoteSlider.length > 0 && $navSlider.length > 0 && typeof $.fn.slick === 'function') {
 
-            // --- Destroy any previous initializations ---
-            if ($quoteSlider.hasClass('slick-initialized')) {
-              try {
-                $quoteSlider.slick('unslick');
-                console.log("Existing quote slider unslicked.");
-              } catch (e) { console.error("Error unslicking quote slider:", e); }
-            }
-            if ($navSlider.hasClass('slick-initialized')) {
-               try {
-                $navSlider.slick('unslick');
-                console.log("Existing nav slider unslicked.");
-               } catch (e) { console.error("Error unslicking nav slider:", e); }
-            }
-
-            // --- Initialize Nav Slider FIRST ---
-            // (Sometimes initializing the 'nav' first helps linking)
-            console.log("Initializing nav slider...");
-            $navSlider.slick({
-              slidesToShow: 3,
-              slidesToScroll: 1,
-              asNavFor: '#testimonials-l2-quote-slider', // Target ID of quote slider
-              dots: false,
-              arrows: false,
-              focusOnSelect: true,
-              infinite: false, // Match original template setting
-              centerMode: false,
-               responsive: [ { breakpoint: 768, settings: { slidesToShow: 2 } }, { breakpoint: 480, settings: { slidesToShow: 1 } } ]
-            });
-
-            // --- Initialize Quote Slider SECOND ---
-            console.log("Initializing quote slider...");
-            $quoteSlider.slick({
-              slidesToShow: 1,
-              slidesToScroll: 1,
-              arrows: false,
-              fade: false, // Set to false as per original template structure
-              asNavFor: '#testimonials-l2-nav-slider' // Target ID of nav slider
-            });
-
-            console.log("Testimonials quote and nav carousels re-initialized and linked.");
-
-          } else {
-             console.log("Testimonials carousel elements (#testimonials-l2-quote-slider or #testimonials-l2-nav-slider) not found, or Slick function is not available.");
+          // --- Destroy any previous initializations ---
+          if ($quoteSlider.hasClass('slick-initialized')) {
+            try {
+              $quoteSlider.slick('unslick');
+              console.log("Existing quote slider unslicked.");
+            } catch (e) { console.error("Error unslicking quote slider:", e); }
           }
+          if ($navSlider.hasClass('slick-initialized')) {
+              try {
+              $navSlider.slick('unslick');
+              console.log("Existing nav slider unslicked.");
+              } catch (e) { console.error("Error unslicking nav slider:", e); }
+          }
+
+          // --- Initialize Nav Slider FIRST ---
+          // (Sometimes initializing the 'nav' first helps linking)
+          console.log("Initializing nav slider...");
+          $navSlider.slick({
+            slidesToShow: 3,
+            slidesToScroll: 1,
+            asNavFor: '#testimonials-l2-quote-slider', // Target ID of quote slider
+            dots: false,
+            arrows: false,
+            focusOnSelect: true,
+            infinite: false, // Match original template setting
+            centerMode: false,
+              responsive: [ { breakpoint: 768, settings: { slidesToShow: 2 } }, { breakpoint: 480, settings: { slidesToShow: 1 } } ]
+          });
+
+          // --- Initialize Quote Slider SECOND ---
+          console.log("Initializing quote slider...");
+          $quoteSlider.slick({
+            slidesToShow: 1,
+            slidesToScroll: 1,
+            arrows: false,
+            fade: false, // Set to false as per original template structure
+            asNavFor: '#testimonials-l2-nav-slider' // Target ID of nav slider
+          });
+
+          console.log("Testimonials quote and nav carousels re-initialized and linked.");
+
+        } else {
+            console.log("Testimonials carousel elements (#testimonials-l2-quote-slider or #testimonials-l2-nav-slider) not found, or Slick function is not available.");
+        }
           // --- End Testimonials Re-init ---
+
+
+        // 5. Re-initialize Gallery Carousel & Popup
+        const $gallerySlider = $('#gallery-carousel-container');
+        if ($gallerySlider.length > 0 && typeof $.fn.slick === 'function' && typeof $.fn.magnificPopup === 'function') {
+          
+          // Re-init Slick Carousel
+          const galleryOptions = $gallerySlider.data('slick'); // Get options
+          if ($gallerySlider.hasClass('slick-initialized')) {
+              try { $gallerySlider.slick('unslick'); } catch(e){} // Destroy if needed
+          }
+          $gallerySlider.slick(galleryOptions); // Initialize Slick
+          console.log("Gallery carousel re-initialized.");
+
+          // Re-init Magnific Popup for the new gallery items
+          $gallerySlider.magnificPopup({
+            delegate: 'a.popup-gallery-item', // Target the links inside the slider
+            type: 'image',
+            tLoading: 'Loading image #%curr%...',
+            mainClass: 'mfp-img-mobile',
+            gallery: {
+                enabled: true,
+                navigateByImgClick: true,
+                preload: [0, 1] // Will preload 0 - before current, and 1 after current image
+            },
+            image: {
+                tError: '<a href="%url%">The image #%curr%</a> could not be loaded.'
+            }
+          });
+          console.log("Magnific Popup re-initialized for gallery.");
+
+        } else {
+            console.log("Gallery carousel element not found, or Slick/Magnific Popup function not available.");
+        }
 
     // Add similar blocks here if/when you make other carousels dynamic
 
