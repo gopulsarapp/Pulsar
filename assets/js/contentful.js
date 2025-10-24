@@ -236,26 +236,28 @@
           const slideDiv = document.createElement('div');
           slideDiv.className = 'slide-item align-v-h';
           
-          slideDiv.innerHTML = `
-            <div class="bg-img" style="background-image: url('${imageUrl}');"></div>
-            <div class="container">
-              <div class="row align-items-center">
-                <div class="col-sm-12 col-md-12 col-lg-12 col-xl-7">
-                  <div class="slide__content">
-                    <span class="slide__subtitle">${fields.subtitle || ''}</span>
-                    <h2 class="slide__title">${fields.title || ''}</h2>
-                    <p class="slide__desc">${fields.description || ''}</p>
-                    <div class="d-flex flex-wrap align-items-center">
-                      <a href="${fields.buttonUrl || '#'}" class="btn btn__secondary btn__rounded mr-30">
-                        <span>${fields.buttonText || 'Learn More'}</span>
-                        <i class="icon-arrow-right"></i>
-                      </a>
-                    </div>
+        const imageAlt = fields.backgroundImage?.fields?.description || fields.title || 'Slider background'; 
+
+        slideDiv.innerHTML = `
+          <div class="bg-img"><img src="${imageUrl}" alt="${imageAlt}"></div> 
+          <div class="container">
+            <div class="row align-items-center">
+              <div class="col-sm-12 col-md-12 col-lg-12 col-xl-7">
+                <div class="slide__content">
+                  <span class="slide__subtitle">${fields.subtitle || ''}</span>
+                  <h2 class="slide__title">${fields.title || ''}</h2>
+                  <p class="slide__desc">${fields.description || ''}</p>
+                  <div class="d-flex flex-wrap align-items-center">
+                    <a href="${fields.buttonUrl || '#'}" class="btn btn__secondary btn__rounded mr-30">
+                      <span>${fields.buttonText || 'Learn More'}</span>
+                      <i class="icon-arrow-right"></i>
+                    </a>
                   </div>
                 </div>
               </div>
             </div>
-          `;
+          </div>
+        `;
           sliderContainer.appendChild(slideDiv);
         }
       });
@@ -836,6 +838,44 @@
       // Add more fetch functions here for other sections
     ]).then(() => {
         console.log("All Contentful content loaded successfully.");
+
+        // --- BACKGROUND IMAGE FIX START ---
+      // Re-run the background image logic specifically for the newly added hero slides
+      const $heroSliderContainer = $('#hero-slider-container');
+      if ($heroSliderContainer.length > 0) {
+          // Find the .bg-img divs ONLY within the hero slider we just populated
+          $heroSliderContainer.find('.slide-item .bg-img').each(function () {
+              const $bgDiv = $(this);
+              const $img = $bgDiv.children('img');
+              if ($img.length > 0) {
+                  const imgSrc = $img.attr('src');
+                  const $parentSlide = $bgDiv.parent(); // Get the .slide-item
+
+                  if (imgSrc) {
+                     // Apply styles to the parent slide item
+                      $parentSlide.css({
+                          'background-image': 'url(' + imgSrc + ')',
+                          'background-size': 'cover',
+                          'background-position': 'center center' // Ensure positioning
+                      });
+                      // Add the necessary class to the parent slide item if not already there
+                      if (!$parentSlide.hasClass('bg-img')) { // Check to avoid duplicates if CSS adds it
+                           $parentSlide.addClass('bg-img');
+                      }
+                      // Remove the original .bg-img div containing the img tag
+                      $bgDiv.remove();
+                      console.log("Applied background for slide:", imgSrc);
+                  } else {
+                      console.warn("Found .bg-img div but img src was empty.");
+                      $bgDiv.remove(); // Remove empty container
+                  }
+              } else {
+                   console.warn("Found .bg-img div without an inner img tag.");
+                   $bgDiv.remove(); // Remove empty container
+              }
+          });
+      }
+      // --- BACKGROUND IMAGE FIX END ---
 
     // --- CAROUSEL FIX START ---
     // We need to explicitly re-initialize Slick carousels AFTER
