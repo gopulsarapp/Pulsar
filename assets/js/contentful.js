@@ -102,6 +102,84 @@
         });
       }
 
+      // --- 4.4 Populate Footer ---
+      const footerAboutText = document.getElementById('footer-about-text');
+      if (footerAboutText && config.footerAboutText) {
+        footerAboutText.textContent = config.footerAboutText;
+      }
+
+      const footerAboutBtn = document.getElementById('footer-about-btn');
+      if (footerAboutBtn && config.footerAboutButtonText && config.footerAboutButtonUrl) {
+        const btnSpan = footerAboutBtn.querySelector('span');
+        if (btnSpan) btnSpan.textContent = config.footerAboutButtonText;
+        footerAboutBtn.href = config.footerAboutButtonUrl;
+      }
+
+      const footerHelpText = document.getElementById('footer-help-text');
+      if (footerHelpText && config.footerContactHelpHtml) {
+        // Use innerHTML for potential simple formatting like <br>
+        footerHelpText.innerHTML = config.footerContactHelpHtml; 
+      }
+
+      const footerPhone = document.getElementById('footer-phone');
+      if (footerPhone && config.footerPhoneNumber) {
+        const phoneSpan = footerPhone.querySelector('span');
+        if (phoneSpan) phoneSpan.textContent = config.footerPhoneNumber;
+        footerPhone.href = `tel:${config.footerPhoneNumber.replace(/\s+/g, '')}`; // Make it a tel link
+      }
+
+      const footerAddress = document.getElementById('footer-address');
+      if (footerAddress && config.footerAddress) {
+        footerAddress.textContent = config.footerAddress;
+      }
+
+      const footerDirectionsBtn = document.getElementById('footer-directions-btn');
+      if (footerDirectionsBtn && config.footerDirectionsLinkText && config.footerDirectionsLinkUrl) {
+          const btnSpan = footerDirectionsBtn.querySelector('span');
+          if(btnSpan) btnSpan.textContent = config.footerDirectionsLinkText;
+          footerDirectionsBtn.href = config.footerDirectionsLinkUrl;
+      }
+      
+      // Social Links
+      const facebookLink = document.getElementById('footer-social-facebook');
+      if (facebookLink && config.socialFacebookUrl) facebookLink.href = config.socialFacebookUrl;
+      else if (facebookLink) facebookLink.style.display = 'none'; // Hide if no URL
+
+      const instagramLink = document.getElementById('footer-social-instagram');
+      if (instagramLink && config.socialInstagramUrl) instagramLink.href = config.socialInstagramUrl;
+       else if (instagramLink) instagramLink.style.display = 'none';
+
+      const twitterLink = document.getElementById('footer-social-twitter');
+      if (twitterLink && config.socialTwitterUrl) twitterLink.href = config.socialTwitterUrl;
+       else if (twitterLink) twitterLink.style.display = 'none';
+
+      // Copyright Area
+      const copyrightText = document.getElementById('footer-copyright-text');
+      if (copyrightText && config.footerCopyrightText) {
+          copyrightText.textContent = config.footerCopyrightText + ' '; // Add space before link
+      }
+      
+      const copyrightLink = document.getElementById('footer-copyright-link');
+       if (copyrightLink && config.footerCopyrightLinkText && config.footerCopyrightLinkUrl) {
+          copyrightLink.textContent = config.footerCopyrightLinkText;
+          copyrightLink.href = config.footerCopyrightLinkUrl;
+      } else if (copyrightLink) {
+          copyrightLink.style.display = 'none'; // Hide if no text/URL
+      }
+
+      // Bottom Links
+      const termsLink = document.getElementById('footer-terms-link');
+      if (termsLink && config.footerTermsLinkUrl) termsLink.href = config.footerTermsLinkUrl;
+      else if (termsLink) termsLink.parentElement.style.display = 'none'; // Hide li if no URL
+
+      const privacyLink = document.getElementById('footer-privacy-link');
+      if (privacyLink && config.footerPrivacyLinkUrl) privacyLink.href = config.footerPrivacyLinkUrl;
+       else if (privacyLink) privacyLink.parentElement.style.display = 'none';
+
+      const cookiesLink = document.getElementById('footer-cookies-link');
+      if (cookiesLink && config.footerCookiesLinkUrl) cookiesLink.href = config.footerCookiesLinkUrl;
+      else if (cookiesLink) cookiesLink.parentElement.style.display = 'none';
+
     } catch (error) {
       console.error("Error fetching global config:", error);
     }
