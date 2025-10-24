@@ -101,6 +101,21 @@
           }
         });
       }
+      // --- 4.x Set Footer Logo ---
+      const footerLogoLight = document.getElementById('footer-logo-light');
+      if (footerLogoLight && config.logoLight) { // Reuse the existing logoLight field
+        const logoUrl = getImageUrl(config.logoLight);
+        if (logoUrl) {
+            footerLogoLight.src = logoUrl;
+            // Optionally update alt text if needed, e.g., from siteTitle
+            footerLogoLight.alt = config.siteTitle ? `${config.siteTitle} Logo` : 'Site Logo';
+        } else {
+             footerLogoLight.style.display = 'none'; // Hide if URL is invalid
+        }
+      } else if (footerLogoLight) {
+         footerLogoLight.style.display = 'none'; // Hide if no logoLight field or element not found
+      }
+      // --- End Footer Logo ---
 
       // --- 4.4 Populate Footer ---
       const footerAboutText = document.getElementById('footer-about-text');
