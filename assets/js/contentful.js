@@ -197,6 +197,60 @@
           if(btnContainer) btnContainer.style.display = 'none';
       }
 
+      // --- 4.6 Populate Contact Form Subjects (Index Page) ---
+      const indexSubjectSelect = document.getElementById('index-contact-subject-select');
+      if (indexSubjectSelect && config.contactFormSubjects) {
+        // Clear existing static/default options (keeping the first placeholder)
+         const firstOption = indexSubjectSelect.options[0]; // Keep "Subject" placeholder
+         indexSubjectSelect.innerHTML = ''; // Clear others
+         if(firstOption && firstOption.value === "0"){
+            indexSubjectSelect.appendChild(firstOption);
+         } else {
+             // Add a default placeholder if needed
+             const placeholderOption = document.createElement('option');
+             placeholderOption.value = "0";
+             placeholderOption.textContent = "Select Subject";
+             indexSubjectSelect.appendChild(placeholderOption);
+         }
+
+        // Add options from Contentful
+        config.contactFormSubjects.forEach((subjectOption) => {
+          if (subjectOption && subjectOption.fields && subjectOption.fields.subjectText) {
+            const option = document.createElement('option');
+            option.value = subjectOption.fields.subjectText; // Use text as value
+            option.textContent = subjectOption.fields.subjectText;
+            indexSubjectSelect.appendChild(option);
+          }
+        });
+
+        // Re-initialize NiceSelect for this specific dropdown AFTER populating
+        if ($.fn.niceSelect) {
+             try {
+                 // Check if NiceSelect is already initialized on this element
+                 if ($(indexSubjectSelect).next().hasClass('nice-select')) {
+                     $(indexSubjectSelect).niceSelect('update');
+                     console.log("NiceSelect updated for index contact subjects.");
+                 } else {
+                     // Initialize if it wasn't already (might happen depending on load order)
+                     $(indexSubjectSelect).niceSelect();
+                     console.log("NiceSelect initialized for index contact subjects.");
+                 }
+             } catch (e) {
+                 console.error("Error updating NiceSelect for index contact subjects:", e);
+                 // Fallback: Try initializing directly if update fails
+                 try { $(indexSubjectSelect).niceSelect(); } catch(initError){}
+             }
+         }
+
+      } else if (indexSubjectSelect) {
+          console.warn("Index subject select element found, but no subjects linked in Contentful Global Config.");
+          // Optional: Clear or add a 'no subjects' option
+          // indexSubjectSelect.innerHTML = '<option value="0">No Subjects Available</option>';
+          // Update NiceSelect even if empty
+          // if ($.fn.niceSelect) { $(indexSubjectSelect).niceSelect('update'); }
+      }
+      // --- End Index Subject Population ---
+
     } catch (error) {
       console.error("Error fetching global config:", error);
     }
