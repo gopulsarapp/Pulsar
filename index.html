@@ -14,6 +14,44 @@
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.3/css/all.css">
   <link rel="stylesheet" href="assets/css/libraries.css">
   <link rel="stylesheet" href="assets/css/style.css">
+
+  <style>
+    /* Target the navigation slider specifically */
+    #testimonials-l2-nav-slider .testimonial__meta {
+      opacity: 0.5; /* Default opacity for inactive items */
+      transition: opacity 0.3s ease; /* Keep the smooth transition */
+    }
+
+    #testimonials-l2-nav-slider .slick-current .testimonial__meta {
+      opacity: 1; /* Make the active item fully opaque */
+    }
+
+    /* Style the avatar container (.testimonial__thmb) */
+    #testimonials-l2-nav-slider .testimonial__thmb {
+      border: 2px solid transparent; /* Ensure all have a transparent border initially to prevent size jumps */
+      padding: 4px; /* Maintain padding consistent with original */
+      background-color: transparent; /* Remove default white background */
+      width: 65px !important; /* Explicitly match original size */
+      height: 65px !important; /* Explicitly match original size */
+      box-sizing: border-box; /* Ensure border is included in size */
+      transition: border-color 0.3s ease; /* Smooth transition for border */
+    }
+
+    /* Add a specific border ONLY to the active avatar container */
+    #testimonials-l2-nav-slider .slick-current .testimonial__thmb {
+      border-color: #21cdc0; /* Use the theme's teal color for the active border */
+      /* background-color: #ffffff; */ /* Optional: Add white background back if desired */
+    }
+
+    /* Ensure the image inside fills the container correctly */
+    #testimonials-l2-nav-slider .testimonial__thmb img {
+       display: block; /* Prevents extra space below image */
+       width: 100%;
+       height: 100%;
+       object-fit: cover;
+       border-radius: 50%;
+    }
+  </style>
 </head>
 
 <body>
@@ -277,70 +315,21 @@
     <!-- ========================= 
       Testimonials layout 2
       =========================  -->
-    <section class="testimonials-layout2 pt-130 pb-40">
+    <section class="testimonials-layout2 pt-130 pb-40" id="testimonials-layout2-section">
       <div class="container">
         <div class="testimonials-wrapper">
           <div class="row">
             <div class="col-sm-12 col-md-12 col-lg-5">
               <div class="heading-layout2">
-                <h3 class="heading__title">Inspiring Stories!</h3>
+                <h3 class="heading__title" id="testimonials-l2-title">Inspiring Stories!</h3>
               </div><!-- /.heading -->
             </div><!-- /.col-lg-5 -->
             <div class="col-sm-12 col-md-12 col-lg-7">
-              <div class="slider-with-navs">
-                <!-- Testimonial #1 -->
-                <div class="testimonial-item">
-                  <h3 class="testimonial__title">“Their doctors include highly qualified practitioners who come from a
-                    range of backgrounds and bring with them a diversity of skills and special interests. They also have
-                    registered nurses on staff who are available to triage any urgent matters, and the administration
-                    and support staff all have exceptional people skills”
-                  </h3>
-                </div><!-- /. testimonial-item -->
-                <!-- Testimonial #2 -->
-                <div class="testimonial-item">
-                  <h3 class="testimonial__title">“Their doctors include highly qualified practitioners who come from a
-                    range of backgrounds and bring with them a diversity of skills and special interests. They also have
-                    registered nurses on staff who are available to triage any urgent matters, and the administration
-                    and support staff all have exceptional people skills”
-                  </h3>
-                </div><!-- /. testimonial-item -->
-                <!-- Testimonial #3 -->
-                <div class="testimonial-item">
-                  <h3 class="testimonial__title">“Their doctors include highly qualified practitioners who come from a
-                    range of backgrounds and bring with them a diversity of skills and special interests. They also have
-                    registered nurses on staff who are available to triage any urgent matters, and the administration
-                    and support staff all have exceptional people skills”
-                  </h3>
-                </div><!-- /. testimonial-item -->
+              <div class="slider-with-navs" id="testimonials-l2-quote-slider">
+                
               </div><!-- /.slick-carousel -->
-              <div class="slider-nav mb-60">
-                <div class="testimonial__meta">
-                  <div class="testimonial__thmb">
-                    <img src="assets/images/testimonials/thumbs/1.png" alt="author thumb">
-                  </div><!-- /.testimonial-thumb -->
-                  <div>
-                    <h4 class="testimonial__meta-title">Sami Wade</h4>
-                    <p class="testimonial__meta-desc">7oroof Inc</p>
-                  </div>
-                </div><!-- /.testimonial-meta -->
-                <div class="testimonial__meta">
-                  <div class="testimonial__thmb">
-                    <img src="assets/images/testimonials/thumbs/2.png" alt="author thumb">
-                  </div><!-- /.testimonial-thumb -->
-                  <div>
-                    <h4 class="testimonial__meta-title">Ahmed</h4>
-                    <p class="testimonial__meta-desc">Web Inc</p>
-                  </div>
-                </div><!-- /.testimonial-meta -->
-                <div class="testimonial__meta">
-                  <div class="testimonial__thmb">
-                    <img src="assets/images/testimonials/thumbs/3.png" alt="author thumb">
-                  </div><!-- /.testimonial-thumb -->
-                  <div>
-                    <h4 class="testimonial__meta-title">Sonia Blake</h4>
-                    <p class="testimonial__meta-desc">Web Inc</p>
-                  </div>
-                </div><!-- /.testimonial-meta -->
+              <div class="slider-nav mb-60" id="testimonials-l2-nav-slider">
+
               </div><!-- /.slider-nav -->
             </div><!-- /.col-lg-7 -->
           </div><!-- /.row -->

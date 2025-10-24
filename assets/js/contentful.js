@@ -583,6 +583,85 @@
     }
   }
 
+
+  async function fetchTestimonialsSection() {
+    try {
+      const entries = await client.getEntries({
+        content_type: 'pageSectionTestimonials', // API ID for the section
+        limit: 1,
+        include: 2 // Include linked testimonial entries
+      });
+
+      if (!entries.items || entries.items.length === 0) {
+        console.warn("No 'pageSectionTestimonials' entry found in Contentful.");
+        // Optional: Hide section
+        // const sectionElement = document.getElementById('testimonials-layout2-section');
+        // if (sectionElement) sectionElement.style.display = 'none';
+        return;
+      }
+
+      const fields = entries.items[0].fields;
+
+      // Update Title (Assuming subtitle might not be in your specific HTML)
+      const title = document.getElementById('testimonials-l2-title');
+      if (title) title.textContent = fields.title || 'Inspiring Stories!'; // Use Contentful title or fallback
+
+      // Get containers for both sliders
+      const quoteSliderContainer = document.getElementById('testimonials-l2-quote-slider');
+      const navSliderContainer = document.getElementById('testimonials-l2-nav-slider');
+
+      if (!quoteSliderContainer || !navSliderContainer || !fields.testimonials) {
+          console.error("Testimonial slider containers or testimonial entries not found.");
+          if(quoteSliderContainer) quoteSliderContainer.innerHTML = ''; // Clear if exists but no content
+          if(navSliderContainer) navSliderContainer.innerHTML = ''; // Clear if exists but no content
+          return;
+      }
+
+      // Clear static content
+      quoteSliderContainer.innerHTML = '';
+      navSliderContainer.innerHTML = '';
+
+      // Generate Testimonial Slides for BOTH sliders
+      fields.testimonials.forEach(item => {
+        if (item && item.fields) {
+          const itemFields = item.fields;
+          const avatarUrl = itemFields.authorAvatar ? getImageUrl(itemFields.authorAvatar) : 'assets/images/testimonials/thumbs/1.png'; // Fallback image
+          const avatarAlt = itemFields.authorAvatar?.fields?.description || itemFields.authorName || 'Client avatar';
+          
+          // --- Create Quote Slide ---
+          const quoteSlideDiv = document.createElement('div');
+          // The parent div for Slick needs no extra classes here based on original HTML
+          quoteSlideDiv.innerHTML = `
+            <div class="testimonial-item">
+              <h3 class="testimonial__title">${itemFields.quote || ''}</h3>
+            </div>`;
+          quoteSliderContainer.appendChild(quoteSlideDiv);
+
+          // --- Create Navigation Slide ---
+          const navSlideDiv = document.createElement('div');
+              // The parent div for Slick needs no extra classes here
+              navSlideDiv.innerHTML = `
+                <div class="testimonial__meta">
+                  <div class="testimonial__thmb">
+                    <img 
+                      src="${avatarUrl}" 
+                      alt="${avatarAlt}" 
+                      style="width: 53px; height: 53px; object-fit: cover; border-radius: 50%; display: block; margin: auto;" 
+                      /> 
+                  </div><div>
+                    <h4 class="testimonial__meta-title">${itemFields.authorName || ''}</h4>
+                    <p class="testimonial__meta-desc">${itemFields.authorTitle || ''}</p>
+                  </div>
+                </div>`;
+              navSliderContainer.appendChild(navSlideDiv);
+        }
+      });
+
+    } catch (error) {
+      console.error("Error fetching Testimonials Layout 2 section:", error);
+    }
+  }
+
   // --- 5. INITIALIZATION ---
   
   /**
@@ -604,6 +683,7 @@
     fetchFeaturesLayout1Section(),
     fetchWorkProcessSection(),
     fetchContactSection(),
+    fetchTestimonialsSection()
       // Add more fetch functions here for other sections
     ]).then(() => {
         console.log("All Contentful content loaded successfully.");
@@ -654,6 +734,60 @@
       } else {
          console.log("Work Process carousel element not found or Slick not loaded for it.");
       }
+
+
+    // 4. Re-initialize Testimonials Carousel (Quote and Nav)
+          const $quoteSlider = $('#testimonials-l2-quote-slider');
+          const $navSlider = $('#testimonials-l2-nav-slider');
+
+          // Ensure both elements exist AND Slick function is available
+          if ($quoteSlider.length > 0 && $navSlider.length > 0 && typeof $.fn.slick === 'function') {
+
+            // --- Destroy any previous initializations ---
+            if ($quoteSlider.hasClass('slick-initialized')) {
+              try {
+                $quoteSlider.slick('unslick');
+                console.log("Existing quote slider unslicked.");
+              } catch (e) { console.error("Error unslicking quote slider:", e); }
+            }
+            if ($navSlider.hasClass('slick-initialized')) {
+               try {
+                $navSlider.slick('unslick');
+                console.log("Existing nav slider unslicked.");
+               } catch (e) { console.error("Error unslicking nav slider:", e); }
+            }
+
+            // --- Initialize Nav Slider FIRST ---
+            // (Sometimes initializing the 'nav' first helps linking)
+            console.log("Initializing nav slider...");
+            $navSlider.slick({
+              slidesToShow: 3,
+              slidesToScroll: 1,
+              asNavFor: '#testimonials-l2-quote-slider', // Target ID of quote slider
+              dots: false,
+              arrows: false,
+              focusOnSelect: true,
+              infinite: false, // Match original template setting
+              centerMode: false,
+               responsive: [ { breakpoint: 768, settings: { slidesToShow: 2 } }, { breakpoint: 480, settings: { slidesToShow: 1 } } ]
+            });
+
+            // --- Initialize Quote Slider SECOND ---
+            console.log("Initializing quote slider...");
+            $quoteSlider.slick({
+              slidesToShow: 1,
+              slidesToScroll: 1,
+              arrows: false,
+              fade: false, // Set to false as per original template structure
+              asNavFor: '#testimonials-l2-nav-slider' // Target ID of nav slider
+            });
+
+            console.log("Testimonials quote and nav carousels re-initialized and linked.");
+
+          } else {
+             console.log("Testimonials carousel elements (#testimonials-l2-quote-slider or #testimonials-l2-nav-slider) not found, or Slick function is not available.");
+          }
+          // --- End Testimonials Re-init ---
 
     // Add similar blocks here if/when you make other carousels dynamic
 
