@@ -295,8 +295,8 @@
                   <div class="col-sm-6 col-md-6 col-lg-6">
                     <div class="form-group">
                       <i class="icon-news form-group-icon"></i>
-                      <select class="form-control" id="index-contact-subject-select" name="subject">
-                        <option value="0">Subject</option>
+                      <select class="form-control" id="index-contact-subject-select" name="subject" required>
+                        <option value="">Subject</option>
                       </select>
                     </div>
                   </div><!-- /.col-lg-6 -->
@@ -304,12 +304,12 @@
                     <div class="form-group">
                       <i class="icon-alert form-group-icon"></i>
                       <textarea class="form-control" placeholder="Message" id="message"
-                        name="message"></textarea>
+                        name="message" required></textarea>
                     </div>
                     <button type="submit" class="btn btn__secondary btn__rounded btn__block btn__xhight mt-10" id="contact-l5-form-button">
                       <span>Submit Request</span> <i class="icon-arrow-right"></i>
                     </button>
-                    <div id="result"></div>
+                    <div class="contact-result" id="contact-form-result"></div>
                   </div><!-- /.col-lg-12 -->
                 </div><!-- /.row -->
               </form>

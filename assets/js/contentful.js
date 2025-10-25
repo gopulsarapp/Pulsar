@@ -216,15 +216,20 @@
       const indexSubjectSelect = document.getElementById('index-contact-subject-select');
       if (indexSubjectSelect && config.contactFormSubjects) {
         // Clear existing static/default options (keeping the first placeholder)
-         const firstOption = indexSubjectSelect.options[0]; // Keep "Subject" placeholder
-         indexSubjectSelect.innerHTML = ''; // Clear others
-         if(firstOption && firstOption.value === "0"){
-            indexSubjectSelect.appendChild(firstOption);
+         const firstOption = indexSubjectSelect.options[0];
+         indexSubjectSelect.innerHTML = ''; // Clear existing options
+
+         // Add back placeholder ensuring its value is empty
+         if(firstOption && firstOption.textContent === "Subject"){ // Check text content
+             firstOption.value = ""; // Ensure value is empty for 'required' to work
+             indexSubjectSelect.appendChild(firstOption);
          } else {
-             // Add a default placeholder if needed
+             // Or create a new default placeholder with empty value
              const placeholderOption = document.createElement('option');
-             placeholderOption.value = "0";
-             placeholderOption.textContent = "Select Subject";
+             placeholderOption.value = ""; // MUST be empty for 'required'
+             placeholderOption.textContent = "Subject"; // Or "Select Subject..."
+             placeholderOption.disabled = true; // Optional: visually indicate it's a placeholder
+             placeholderOption.selected = true; // Make it selected by default
              indexSubjectSelect.appendChild(placeholderOption);
          }
 
@@ -1096,44 +1101,80 @@
 
   });
 
-// })(); // Uncomment this line if you uncommented the first line
+// })();
 
 
-const form = document.getElementById('form');
-const result = document.getElementById('result');
+// --- CONTACT FORM HANDLING FOR CONTACT LAYOUT 5 ---
+const form = document.getElementById('form'); 
+const resultDiv = document.getElementById('contact-form-result'); 
+const submitButton = document.getElementById('contact-l5-form-button'); 
 
-form.addEventListener('submit', function(e) {
-  e.preventDefault();
-  const formData = new FormData(form);
-  const object = Object.fromEntries(formData);
-  const json = JSON.stringify(object);
-  result.innerHTML = "Please wait..."
+// Check if all elements were found
+if (form && resultDiv && submitButton) {
+    const originalButtonHtml = submitButton.innerHTML; 
 
-    fetch('https://api.web3forms.com/submit', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            },
-            body: json
-        })
-        .then(async (response) => {
-            let json = await response.json();
-            if (response.status == 200) {
-                result.innerHTML = json.message;
-            } else {
-                console.log(response);
-                result.innerHTML = json.message;
-            }
-        })
-        .catch(error => {
-            console.log(error);
-            result.innerHTML = "Something went wrong!";
-        })
-        .then(function() {
-            form.reset();
-            setTimeout(() => {
-                result.style.display = "none";
-            }, 3000);
-        });
-});
+    form.addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default submission
+        const formData = new FormData(form);
+        const object = Object.fromEntries(formData);
+        const json = JSON.stringify(object);
+        resultDiv.innerHTML = ""; // Clear previous message
+        resultDiv.style.display = "block"; // Make sure it's visible
+        submitButton.disabled = true;
+        submitButton.innerHTML = `
+            <span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>
+            <span>Submitting...</span> 
+        `;
+
+        fetch('https://api.web3forms.com/submit', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                },
+                body: json
+            })
+            .then(async (response) => {
+                let jsonResponse = await response.json();
+                if (response.status == 200 && jsonResponse.success) {
+                    // --- UI Update: Success ---
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-success mt-3" role="alert">
+                            <strong>Success!</strong> ${'Your Request was submitted successfully.'}
+                        </div>
+                    `;
+                    form.reset(); 
+                    setTimeout(() => {
+                        resultDiv.style.display = "none";
+                        resultDiv.innerHTML = ""; // Clear content as well
+                    }, 3000);
+                } else {
+                    console.error("Submission failed:", jsonResponse);
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-danger mt-3" role="alert">
+                            <strong>Error!</strong> ${jsonResponse.message || 'Something went wrong.'}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                console.error("Network/Fetch Error:", error);
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger mt-3" role="alert">
+                        <strong>Error!</strong> Could not reach server. Please try again.
+                    </div>
+                `;
+            })
+            .finally(() => {
+                submitButton.disabled = false;
+                submitButton.innerHTML = originalButtonHtml;
+            });
+    });
+
+} else {
+    // Log an error if any essential element is missing
+    console.error("Could not find all required form elements (form, result div, or submit button). Form UI enhancements disabled.");
+    if (!form) console.error("Missing: form#form");
+    if (!resultDiv) console.error("Missing: div#contact-form-result");
+    if (!submitButton) console.error("Missing: button#contact-l5-form-button");
+}
