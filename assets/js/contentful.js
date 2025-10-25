@@ -59,10 +59,24 @@
 
       const config = entries.items[0].fields;
 
-      // 4.1. Set Page Title & Favicon
+      // 4.1. Set Page Title, Meta Tags & Favicon
       if (config.siteTitle) {
         document.title = config.siteTitle;
       }
+
+      // Set Meta Description
+      const metaDescription = document.getElementById('meta-description');
+      if (metaDescription && config.seoMetaDescription) {
+        metaDescription.setAttribute('content', config.seoMetaDescription);
+      }
+
+      // Set Meta Keywords
+      const metaKeywords = document.getElementById('meta-keywords');
+      if (metaKeywords && config.seoMetaKeywords) {
+        metaKeywords.setAttribute('content', config.seoMetaKeywords);
+      }
+
+      // Set Favicon (remains the same)
       const favicon = document.getElementById('favicon');
       if (favicon && config.favicon) {
         favicon.href = getImageUrl(config.favicon);
