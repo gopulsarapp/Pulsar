@@ -211,20 +211,21 @@
 
       // --- 4.5 Populate Header Button ---
       const headerButton = document.getElementById('header-appointment-btn');
+      const btnContainer = headerButton ? headerButton.closest('.d-xl-flex') : null; 
+
       if (headerButton && config.headerButtonText && config.headerButtonUrl) {
         const btnSpan = headerButton.querySelector('span');
         if (btnSpan) btnSpan.textContent = config.headerButtonText;
         headerButton.href = config.headerButtonUrl;
-        // Ensure the button container is visible (it has d-none initially)
-        const btnContainer = headerButton.closest('.d-xl-flex'); // Find the parent container
-         if(btnContainer){
-            btnContainer.classList.remove('d-none'); // Make it visible on xl+ screens
-         }
-      } else if (headerButton) {
-          // Optionally hide the button's container if no data
-          const btnContainer = headerButton.closest('.d-xl-flex');
-          if(btnContainer) btnContainer.style.display = 'none';
+        if (btnContainer) {
+            btnContainer.style.display = ''; 
+        }
+      } else if (btnContainer) {
+          // Hide the button's container completely if no data from Contentful
+          btnContainer.style.display = 'none';
+          console.log("Header appointment button container hidden due to missing Contentful data.");
       }
+      // --- End Header Button Population ---
 
       // --- 4.6 Populate Contact Form Subjects (Index Page) ---
       const indexSubjectSelect = document.getElementById('index-contact-subject-select');
