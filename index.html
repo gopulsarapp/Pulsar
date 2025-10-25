@@ -260,7 +260,10 @@
           </div><!-- /.col-lg-5 -->
           <div class="col-sm-12 col-md-12 col-lg-7">
             <div class="contact-panel mb-50">
-              <form class="contact-panel__form" method="post" action="assets/php/contact.php" id="contactForm">
+              <form class="contact-panel__form" method="post" id="form">
+                <input type="hidden" name="access_key" value="e843812a-220c-4d70-a490-bbcf39069219">
+                <input type="hidden" name="subject" value="New Submission from Web3Forms">
+                <input type="checkbox" name="botcheck" id="" style="display: none;">
                 <div class="row">
                   <div class="col-sm-12">
                     <h4 class="contact-panel__title" id="contact-l5-form-title">How Can We Help? </h4>
@@ -271,28 +274,28 @@
                   <div class="col-sm-6 col-md-6 col-lg-6">
                     <div class="form-group">
                       <i class="icon-user form-group-icon"></i>
-                      <input type="text" class="form-control" placeholder="Name" id="contact-name" name="contact-name"
+                      <input type="text" class="form-control" placeholder="Name" id="name" name="name"
                         required>
                     </div>
                   </div><!-- /.col-lg-6 -->
                   <div class="col-sm-6 col-md-6 col-lg-6">
                     <div class="form-group">
                       <i class="icon-email form-group-icon"></i>
-                      <input type="email" class="form-control" placeholder="Email" id="contact-email"
-                        name="contact-email" required>
+                      <input type="email" class="form-control" placeholder="Email" id="email"
+                        name="email" required>
                     </div>
                   </div><!-- /.col-lg-6 -->
                   <div class="col-sm-6 col-md-6 col-lg-6">
                     <div class="form-group">
                       <i class="icon-phone form-group-icon"></i>
-                      <input type="text" class="form-control" placeholder="Phone" id="contact-Phone"
-                        name="contact-phone" required>
+                      <input type="text" class="form-control" placeholder="Phone" id="phone"
+                        name="phone" required>
                     </div>
                   </div><!-- /.col-lg-6 -->
                   <div class="col-sm-6 col-md-6 col-lg-6">
                     <div class="form-group">
                       <i class="icon-news form-group-icon"></i>
-                      <select class="form-control" id="index-contact-subject-select">
+                      <select class="form-control" id="index-contact-subject-select" name="subject">
                         <option value="0">Subject</option>
                       </select>
                     </div>
@@ -300,13 +303,13 @@
                   <div class="col-12">
                     <div class="form-group">
                       <i class="icon-alert form-group-icon"></i>
-                      <textarea class="form-control" placeholder="Message" id="contact-message"
-                        name="contact-message"></textarea>
+                      <textarea class="form-control" placeholder="Message" id="message"
+                        name="message"></textarea>
                     </div>
                     <button type="submit" class="btn btn__secondary btn__rounded btn__block btn__xhight mt-10" id="contact-l5-form-button">
                       <span>Submit Request</span> <i class="icon-arrow-right"></i>
                     </button>
-                    <div class="contact-result"></div>
+                    <div id="result"></div>
                   </div><!-- /.col-lg-12 -->
                 </div><!-- /.row -->
               </form>
