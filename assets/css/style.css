@@ -2009,6 +2009,7 @@ input[type=radio] {
 
 .icon-arrow-right {
   font-size: 65%;
+  display: none;
 }
 
 /*-------------------------
@@ -4213,6 +4214,7 @@ input[type=radio] {
   color: #21cdc0;
   margin-bottom: 20px;
   overflow: hidden;
+  display: none;
 }
 .feature-item .feature__icon i:nth-of-type(2) {
   position: absolute;
@@ -4275,6 +4277,7 @@ input[type=radio] {
 .feature-item:hover .btn__link {
   opacity: 1;
   transform: scale(1);
+  display: none;
 }
 
 .features-layout1 {
@@ -4310,6 +4313,7 @@ input[type=radio] {
   position: absolute;
   right: -50px;
   bottom: -50px;
+   display: none;
   font-size: 140px;
   color: rgba(255, 255, 255, 0.1);
 }

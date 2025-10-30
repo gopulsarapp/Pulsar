@@ -5,12 +5,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-  <meta name="description" content="Grow your dental practice with Pulsar. Attract & retain patients with integrated VoIP phones, reviews, texting, online scheduling, payments & digital forms.">
+  <meta name="description"
+    content="Grow your dental practice with Pulsar. Attract & retain patients with integrated VoIP phones, reviews, texting, online scheduling, payments & digital forms.">
   <link href="" rel="icon" id="favicon">
   <title></title>
 
   <link rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&family=Roboto:wght@400;700&display=swap">
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&icon_names=mail" />
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.3/css/all.css">
   <link rel="stylesheet" href="assets/css/libraries.css">
   <link rel="stylesheet" href="assets/css/style.css">
@@ -18,78 +21,96 @@
   <style>
     /* Target the navigation slider specifically */
     #testimonials-l2-nav-slider .testimonial__meta {
-      opacity: 0.5; /* Default opacity for inactive items */
-      transition: opacity 0.3s ease; /* Keep the smooth transition */
+      opacity: 0.5;
+      /* Default opacity for inactive items */
+      transition: opacity 0.3s ease;
+      /* Keep the smooth transition */
     }
 
     #testimonials-l2-nav-slider .slick-current .testimonial__meta {
-      opacity: 1; /* Make the active item fully opaque */
+      opacity: 1;
+      /* Make the active item fully opaque */
     }
 
     /* Style the avatar container (.testimonial__thmb) */
     #testimonials-l2-nav-slider .testimonial__thmb {
-      border: 2px solid transparent; /* Ensure all have a transparent border initially to prevent size jumps */
-      padding: 4px; /* Maintain padding consistent with original */
-      background-color: transparent; /* Remove default white background */
-      width: 65px !important; /* Explicitly match original size */
-      height: 65px !important; /* Explicitly match original size */
-      box-sizing: border-box; /* Ensure border is included in size */
-      transition: border-color 0.3s ease; /* Smooth transition for border */
+      border: 2px solid transparent;
+      /* Ensure all have a transparent border initially to prevent size jumps */
+      padding: 4px;
+      /* Maintain padding consistent with original */
+      background-color: transparent;
+      /* Remove default white background */
+      width: 65px !important;
+      /* Explicitly match original size */
+      height: 65px !important;
+      /* Explicitly match original size */
+      box-sizing: border-box;
+      /* Ensure border is included in size */
+      transition: border-color 0.3s ease;
+      /* Smooth transition for border */
     }
 
     /* Add a specific border ONLY to the active avatar container */
     #testimonials-l2-nav-slider .slick-current .testimonial__thmb {
-      border-color: #21cdc0; /* Use the theme's teal color for the active border */
-      /* background-color: #ffffff; */ /* Optional: Add white background back if desired */
+      border-color: #21cdc0;
+      /* Use the theme's teal color for the active border */
+      /* background-color: #ffffff; */
+      /* Optional: Add white background back if desired */
     }
 
     /* Ensure the image inside fills the container correctly */
     #testimonials-l2-nav-slider .testimonial__thmb img {
-       display: block; /* Prevents extra space below image */
-       width: 100%;
-       height: 100%;
-       object-fit: cover;
-       border-radius: 50%;
+      display: block;
+      /* Prevents extra space below image */
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
     }
 
     /* Mobile overlay for slider text */
     @media (max-width: 767px) {
       .slider .slide-item .slide__content {
-        position: relative; 
-        z-index: 2;      
-        padding: 20px;    
+        position: relative;
+        z-index: 2;
+        padding: 20px;
       }
 
-      .slider .slide-item::before { /* Use ::before pseudo-element for the overlay */
+      .slider .slide-item::before {
+        /* Use ::before pseudo-element for the overlay */
         content: "";
         position: absolute;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.4); /* Black overlay with 40% opacity - adjust opacity (0.0 to 1.0)*/
+        background-color: rgba(0, 0, 0, 0.4);
+        /* Black overlay with 40% opacity - adjust opacity (0.0 to 1.0)*/
         z-index: 1;
       }
 
 
-       /* Optional: If text color still clashes, force white on mobile */
-       .slider .slide-item .slide__content .slide__subtitle,
-       .slider .slide-item .slide__content .slide__title,
-       .slider .slide-item .slide__content .slide__desc {
-           color: #ffffff !important; 
-       }
-       .slider .slide-item .slide__content .btn__secondary{
-          background-color: #ffffff;
-          color: #213360;
-       }
-        .slider .slide-item .slide__content .btn__secondary i{
-           color: #213360;
-           background-color:#ffffff;
-        }
-        .slider .slide-item .slide__content .btn__secondary:hover i{
-           background-color:#21cdc0;
-        }
-       
+      /* Optional: If text color still clashes, force white on mobile */
+      .slider .slide-item .slide__content .slide__subtitle,
+      .slider .slide-item .slide__content .slide__title,
+      .slider .slide-item .slide__content .slide__desc {
+        color: #ffffff !important;
+      }
+
+      .slider .slide-item .slide__content .btn__secondary {
+        background-color: #ffffff;
+        color: #213360;
+      }
+
+      .slider .slide-item .slide__content .btn__secondary i {
+        color: #213360;
+        background-color: #ffffff;
+      }
+
+      .slider .slide-item .slide__content .btn__secondary:hover i {
+        background-color: #21cdc0;
+      }
+
     }
   </style>
 </head>
@@ -115,7 +136,7 @@
           </button>
           <div class="collapse navbar-collapse" id="mainNavigation">
             <ul class="navbar-nav ml-auto" id="main-nav-ul">
-              
+
             </ul><!-- /.navbar-nav -->
             <button class="close-mobile-menu d-block d-lg-none"><i class="fas fa-times"></i></button>
           </div><!-- /.navbar-collapse -->
@@ -170,7 +191,7 @@
           </div><!-- /.col-lg-6 -->
           <div class="col-sm-12 col-md-12 col-lg-6">
             <div class="about__img z-index-2" id="about-image-container" style="display: none;">
-                <img src="" alt="About image placeholder" id="about-image" class="img-fluid">
+              <img src="" alt="About image placeholder" id="about-image" class="img-fluid">
             </div>
           </div><!-- /.col-lg-6 -->
         </div><!-- /.row -->
@@ -214,7 +235,8 @@
     <!-- ======================
      Work Process 
     ========================= -->
-    <section class="work-process work-process-carousel pt-130 pb-0 bg-overlay bg-overlay-secondary" id="work-process-section">
+    <section class="work-process work-process-carousel pt-130 pb-0 bg-overlay bg-overlay-secondary"
+      id="work-process-section">
       <div class="container">
         <div class="row heading-layout2">
           <div class="col-12">
@@ -227,7 +249,8 @@
           <div class="col-sm-12 col-md-12 col-lg-6 col-xl-6 offset-xl-1">
             <p class="heading__desc font-weight-bold color-gray mb-40" id="work-process-desc">
             </p>
-            <ul class="list-items list-items-layout2 list-items-light list-horizontal list-unstyled" id="work-process-list">
+            <ul class="list-items list-items-layout2 list-items-light list-horizontal list-unstyled"
+              id="work-process-list">
 
             </ul>
           </div><!-- /.col-xl-6 -->
@@ -237,7 +260,7 @@
             <div class="carousel-container mt-90">
               <div class="slick-carousel" id="work-process-steps-container"
                 data-slick='{"slidesToShow": 4, "slidesToScroll": 1, "infinite":false, "arrows": false, "dots": false, "responsive": [{"breakpoint": 1200, "settings": {"slidesToShow": 3}}, {"breakpoint": 992, "settings": {"slidesToShow": 2}}, {"breakpoint": 767, "settings": {"slidesToShow": 2}}, {"breakpoint": 480, "settings": {"slidesToShow": 1}}]}'>
-                
+
               </div><!-- /.carousel -->
             </div>
           </div><!-- /.col-12 -->
@@ -255,7 +278,8 @@
               </p>
             </div><!-- /.col-lg-7 -->
             <div class="col-sm-12 col-md-3 col-lg-3">
-              <a href="#contact" class="btn btn__secondary btn__secondary-style2 btn__rounded mr-30" id="work-process-cta-button">
+              <a href="#contact" class="btn btn__secondary btn__secondary-style2 btn__rounded mr-30"
+                id="work-process-cta-button">
                 <span></span>
                 <i class="icon-arrow-right"></i>
               </a>
@@ -277,10 +301,11 @@
                 <h3 class="heading__title mb-30" id="contact-l5-heading"></h3>
                 <p class="heading__desc" id="contact-l5-desc"></p>
               </div>
-              
+
             </div>
-            <ul class="list-items list-items-layout2 list-items-light list-horizontal list-unstyled mb-50" id="contact-l5-list">
-    
+            <ul class="list-items list-items-layout2 list-items-light list-horizontal list-unstyled mb-50"
+              id="contact-l5-list">
+
             </ul>
           </div><!-- /.col-lg-5 -->
           <div class="col-sm-12 col-md-12 col-lg-7">
@@ -297,22 +322,19 @@
                   <div class="col-sm-6 col-md-6 col-lg-6">
                     <div class="form-group">
                       <i class="icon-user form-group-icon"></i>
-                      <input type="text" class="form-control" placeholder="Name" id="name" name="name"
-                        required>
+                      <input type="text" class="form-control" placeholder="Name" id="name" name="name" required>
                     </div>
                   </div><!-- /.col-lg-6 -->
                   <div class="col-sm-6 col-md-6 col-lg-6">
                     <div class="form-group">
                       <i class="icon-email form-group-icon"></i>
-                      <input type="email" class="form-control" placeholder="Email" id="email"
-                        name="email" required>
+                      <input type="email" class="form-control" placeholder="Email" id="email" name="email" required>
                     </div>
                   </div><!-- /.col-lg-6 -->
                   <div class="col-sm-6 col-md-6 col-lg-6">
                     <div class="form-group">
                       <i class="icon-phone form-group-icon"></i>
-                      <input type="text" class="form-control" placeholder="Phone" id="phone"
-                        name="phone" required>
+                      <input type="text" class="form-control" placeholder="Phone" id="phone" name="phone" required>
                     </div>
                   </div><!-- /.col-lg-6 -->
                   <div class="col-sm-6 col-md-6 col-lg-6">
@@ -326,10 +348,11 @@
                   <div class="col-12">
                     <div class="form-group">
                       <i class="icon-alert form-group-icon"></i>
-                      <textarea class="form-control" placeholder="Message" id="message"
-                        name="message" required></textarea>
+                      <textarea class="form-control" placeholder="Message" id="message" name="message"
+                        required></textarea>
                     </div>
-                    <button type="submit" class="btn btn__secondary btn__rounded btn__block btn__xhight mt-10" id="contact-l5-form-button">
+                    <button type="submit" class="btn btn__secondary btn__rounded btn__block btn__xhight mt-10"
+                      id="contact-l5-form-button">
                       <span></span> <i class="icon-arrow-right"></i>
                     </button>
                     <div class="contact-result" id="contact-form-result"></div>
@@ -356,7 +379,7 @@
             </div><!-- /.col-lg-5 -->
             <div class="col-sm-12 col-md-12 col-lg-7">
               <div class="slider-with-navs" id="testimonials-l2-quote-slider">
-                
+
               </div><!-- /.slick-carousel -->
               <div class="slider-nav mb-60" id="testimonials-l2-nav-slider">
 
@@ -376,7 +399,7 @@
           <div class="col-12">
             <div class="slick-carousel" id="gallery-carousel-container"
               data-slick='{"slidesToShow": 4, "slidesToScroll": 1, "autoplay": true, "arrows": true, "dots": false, "responsive": [ {"breakpoint": 992, "settings": {"slidesToShow": 2}}, {"breakpoint": 767, "settings": {"slidesToShow": 2}}, {"breakpoint": 480, "settings": {"slidesToShow": 1}}]}'>
-              
+
             </div><!-- /.gallery-images-wrapper -->
           </div><!-- /.col-xl-5 -->
         </div><!-- /.row -->
@@ -399,10 +422,10 @@
                 </a>
               </div><!-- /.footer-widget__content -->
             </div><!-- /.col-xl-2 -->
-            
+
             <div class="col-sm-12 col-md-6 col-lg-4 ml-lg-auto">
               <div class="footer-widget-contact">
-                <h6 class="footer-widget__title color-heading">Quick Contacts</h6>
+                <h6 class="footer-widget__title color-heading">Contacts Us</h6>
                 <ul class="contact-list list-unstyled">
                   <li id="footer-help-text"></li>
                   <li>
@@ -410,18 +433,22 @@
                       <i class="icon-phone"></i> <span></span>
                     </a>
                   </li>
+                  <li><a href="mailto:support@gopulsar.app" style="color: #3852a0; display: flex; "><span
+                        class="material-symbols-outlined" style="margin-right: 10px;">
+                        mail
+                      </span> support@gopulsar.app</a></li>
                   <li class="color-body" id="footer-address"></li>
                 </ul>
-                <div class="d-flex align-items-center">
+                <!-- <div class="d-flex align-items-center">
                   <a href="#" class="btn btn__primary btn__link mr-30" id="footer-directions-btn">
                     <i class="icon-arrow-right"></i> <span></span>
                   </a>
-                  <ul class="social-icons list-unstyled mb-0">
+                   <ul class="social-icons list-unstyled mb-0">
                     <li><a href="#" id="footer-social-facebook"><i class="fab fa-facebook-f"></i></a></li>
                     <li><a href="#" id="footer-social-instagram"><i class="fab fa-instagram"></i></a></li>
                     <li><a href="#" id="footer-social-twitter"><i class="fab fa-twitter"></i></a></li>
-                  </ul><!-- /.social-icons -->
-                </div>
+                  </ul>
+                </div> -->
               </div><!-- /.footer-widget__content -->
             </div><!-- /.col-lg-2 -->
           </div><!-- /.row -->
@@ -459,12 +486,12 @@
 
   <script src="assets/js/jquery-3.5.1.min.js"></script>
 
-<script src="https://cdn.jsdelivr.net/npm/contentful@latest/dist/contentful.browser.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/contentful@latest/dist/contentful.browser.min.js"></script>
 
-<script src="assets/js/contentful.js"></script>
+  <script src="assets/js/contentful.js"></script>
 
-<script src="assets/js/plugins.js"></script>
-<script src="assets/js/main.js"></script>
+  <script src="assets/js/plugins.js"></script>
+  <script src="assets/js/main.js"></script>
 </body>
 
 </html>
