@@ -235,14 +235,14 @@
          indexSubjectSelect.innerHTML = ''; // Clear existing options
 
          // Add back placeholder ensuring its value is empty
-         if(firstOption && firstOption.textContent === "Subject"){ // Check text content
+         if(firstOption && firstOption.textContent === "PMS System"){ // Check text content
              firstOption.value = ""; // Ensure value is empty for 'required' to work
              indexSubjectSelect.appendChild(firstOption);
          } else {
              // Or create a new default placeholder with empty value
              const placeholderOption = document.createElement('option');
              placeholderOption.value = ""; // MUST be empty for 'required'
-             placeholderOption.textContent = "Subject"; // Or "Select Subject..."
+             placeholderOption.textContent = "PMS System"; // Or "Select Subject..."
              placeholderOption.disabled = true; // Optional: visually indicate it's a placeholder
              placeholderOption.selected = true; // Make it selected by default
              indexSubjectSelect.appendChild(placeholderOption);
