@@ -410,7 +410,12 @@
 
             </div>
           </div>
-          <div class="g-recaptcha" data-sitekey="6LcJXAIsAAAAAJKBQNEAo7TLh5NNi8QnT6Fz15BD"></div>
+
+          <div id="captcha-box">
+            <div class="g-recaptcha" data-sitekey="6LcJXAIsAAAAAJKBQNEAo7TLh5NNi8QnT6Fz15BD"
+              data-callback="onCaptchaSuccess">
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -498,6 +503,14 @@
 
   <script src="assets/js/plugins.js"></script>
   <script src="assets/js/main.js"></script>
+  <script src="assets/js/cookie-consent.js.js"></script>
+  <script>
+    function onCaptchaSuccess() {
+      const box = document.getElementById('captcha-box');
+      box.style.display = 'none';
+    }
+  </script>
+
 </body>
 
 </html>
