@@ -12,6 +12,13 @@ body {
   overflow-x: hidden;
 }
 
+.g-recaptcha{
+  position: fixed;
+  bottom: 100px;
+  right:20px;
+  z-index: 1000;
+}
+
 ::-moz-selection {
   background-color: #21cdc0;
   color: #ffffff;
