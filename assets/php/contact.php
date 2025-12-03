@@ -8,6 +8,7 @@ $recipientName='your Name';
 
 $senderName = $_POST['contact-name'];
 $senderPhone = $_POST['contact-phone'];
+$senderSubjectPMS = $_POST['contact-subject'];
 $senderMessage= $_POST['contact-message'];
 $senderSubject = 'New Message From ' . $senderName;
 
@@ -37,6 +38,7 @@ $message .= '<table rules="all" style="border:1px solid #666;width:300px;" cellp
 $message .= ($senderName) ? "<tr style='background: #eee;'><td><strong>Name:</strong> </td><td>" . $senderName . "</td></tr>" : '';
 $message .= ($senderEmail) ?"<tr><td><strong>Email:</strong> </td><td>" . $senderEmail . "</td></tr>" : '';
 $message .= ($senderPhone) ?"<tr><td><strong>Phone:</strong> </td><td>" . $senderPhone . "</td></tr>" : '';
+$message .= ($senderPhone) ?"<tr><td><strong>Do you use OpenDental PMS:</strong> </td><td>" . $senderSubjectPMS . "</td></tr>" : '';
 $message .= ($senderMessage) ?"<tr><td><strong>Email:</strong> </td><td>" . $senderMessage . "</td></tr>" : '';
 
 $message .= "</table>";

@@ -7,325 +7,325 @@
 */
 
 // (function () { // Uncomment this line to wrap the code in a private scope
-  "use strict";
+"use strict";
 
-  // --- 1. CONFIGURATION ---
-  // Replace with your own Contentful Space ID and Access Token
-  const CONTENTFUL_SPACE_ID = 'mc1xdogpqbyd';
-  const CONTENTFUL_ACCESS_TOKEN = 'CZjD6ZuG0hsFUL_vG2PwD_udCAy2HgQFOp9Y_Y_241E';
+// --- 1. CONFIGURATION ---
+// Replace with your own Contentful Space ID and Access Token
+const CONTENTFUL_SPACE_ID = 'mc1xdogpqbyd';
+const CONTENTFUL_ACCESS_TOKEN = 'CZjD6ZuG0hsFUL_vG2PwD_udCAy2HgQFOp9Y_Y_241E';
 
-  // Check for configuration errors
-  if (CONTENTFUL_SPACE_ID === 'YOUR_SPACE_ID' || CONTENTFUL_ACCESS_TOKEN === 'YOUR_CONTENT_DELIVERY_API_TOKEN') {
-    console.error("Contentful credentials are not set. Please update assets/js/contentful.js");
+// Check for configuration errors
+if (CONTENTFUL_SPACE_ID === 'YOUR_SPACE_ID' || CONTENTFUL_ACCESS_TOKEN === 'YOUR_CONTENT_DELIVERY_API_TOKEN') {
+  console.error("Contentful credentials are not set. Please update assets/js/contentful.js");
+}
+
+// --- 2. INITIALIZE CONTENTFUL CLIENT ---
+const client = contentful.createClient({
+  space: CONTENTFUL_SPACE_ID,
+  accessToken: CONTENTFUL_ACCESS_TOKEN,
+});
+
+// --- 3. HELPER FUNCTIONS ---
+
+/**
+ * Safely gets a file URL from a Contentful media asset.
+ * @param {object} mediaField - The Contentful media field.
+ * @returns {string} - The URL or an empty string.
+ */
+const getImageUrl = (mediaField) => {
+  if (mediaField && mediaField.fields && mediaField.fields.file && mediaField.fields.file.url) {
+    return mediaField.fields.file.url;
   }
+  return '';
+};
 
-  // --- 2. INITIALIZE CONTENTFUL CLIENT ---
-  const client = contentful.createClient({
-    space: CONTENTFUL_SPACE_ID,
-    accessToken: CONTENTFUL_ACCESS_TOKEN,
-  });
+// --- 4. FETCH & RENDER FUNCTIONS ---
 
-  // --- 3. HELPER FUNCTIONS ---
-  
-  /**
-   * Safely gets a file URL from a Contentful media asset.
-   * @param {object} mediaField - The Contentful media field.
-   * @returns {string} - The URL or an empty string.
-   */
-  const getImageUrl = (mediaField) => {
-    if (mediaField && mediaField.fields && mediaField.fields.file && mediaField.fields.file.url) {
-      return mediaField.fields.file.url;
+/**
+ * Fetches the Global Config (logo, nav, title).
+ */
+async function fetchGlobalConfig() {
+  try {
+    const entries = await client.getEntries({
+      content_type: 'globalSiteConfig',
+      limit: 1, // We only ever want one config entry
+      include: 2  // Include 2 levels deep to get the linked nav items
+    });
+
+    if (!entries.items || entries.items.length === 0) {
+      console.error("No 'globalConfig' entry found in Contentful.");
+      return;
     }
-    return '';
-  };
-  
-  // --- 4. FETCH & RENDER FUNCTIONS ---
 
-  /**
-   * Fetches the Global Config (logo, nav, title).
-   */
-  async function fetchGlobalConfig() {
-    try {
-      const entries = await client.getEntries({
-        content_type: 'globalSiteConfig',
-        limit: 1, // We only ever want one config entry
-        include: 2  // Include 2 levels deep to get the linked nav items
+    const config = entries.items[0].fields;
+
+    // 4.1. Set Page Title, Meta Tags & Favicon
+    if (config.siteTitle) {
+      document.title = config.siteTitle;
+    }
+
+    // Set Meta Description
+    const metaDescription = document.getElementById('meta-description');
+    if (metaDescription && config.seoMetaDescription) {
+      metaDescription.setAttribute('content', config.seoMetaDescription);
+    }
+
+    // Set Meta Keywords
+    const metaKeywords = document.getElementById('meta-keywords');
+    if (metaKeywords && config.seoMetaKeywords) {
+      metaKeywords.setAttribute('content', config.seoMetaKeywords);
+    }
+
+    // Set Favicon (remains the same)
+    const favicon = document.getElementById('favicon');
+    if (favicon && config.favicon) {
+      favicon.href = getImageUrl(config.favicon);
+    }
+
+    // 4.2. Set Logos
+    const logoLight = document.getElementById('logo-light');
+    if (logoLight && config.logoLight) {
+      logoLight.src = getImageUrl(config.logoLight);
+    }
+    const logoDark = document.getElementById('logo-dark');
+    if (logoDark && config.logoDark) {
+      logoDark.src = getImageUrl(config.logoDark);
+    }
+
+    // 4.3. Build Main Navigation
+    const navUl = document.getElementById('main-nav-ul');
+    if (navUl && config.mainNavigation) {
+      navUl.innerHTML = ''; // Clear static content
+      config.mainNavigation.forEach(navLink => {
+        if (navLink && navLink.fields) {
+          const fields = navLink.fields;
+          const li = document.createElement('li');
+          li.className = 'nav__item';
+
+          const a = document.createElement('a');
+          a.href = fields.url || '#';
+          a.className = 'nav__item-link';
+          if (fields.isActive) {
+            a.classList.add('active');
+          }
+          a.textContent = fields.text || '';
+
+          li.appendChild(a);
+          navUl.appendChild(li);
+        }
+      });
+    }
+    // --- 4.x Set Footer Logo ---
+    const footerLogoLight = document.getElementById('footer-logo-light');
+    if (footerLogoLight && config.logoLight) { // Reuse the existing logoLight field
+      const logoUrl = getImageUrl(config.logoLight);
+      if (logoUrl) {
+        footerLogoLight.src = logoUrl;
+        // Optionally update alt text if needed, e.g., from siteTitle
+        footerLogoLight.alt = config.siteTitle ? `${config.siteTitle} Logo` : 'Site Logo';
+      } else {
+        footerLogoLight.style.display = 'none'; // Hide if URL is invalid
+      }
+    } else if (footerLogoLight) {
+      footerLogoLight.style.display = 'none'; // Hide if no logoLight field or element not found
+    }
+    // --- End Footer Logo ---
+
+    // --- 4.4 Populate Footer ---
+    const footerAboutText = document.getElementById('footer-about-text');
+    if (footerAboutText && config.footerAboutText) {
+      footerAboutText.textContent = config.footerAboutText;
+    }
+
+    const footerAboutBtn = document.getElementById('footer-about-btn');
+    if (footerAboutBtn && config.footerAboutButtonText && config.footerAboutButtonUrl) {
+      const btnSpan = footerAboutBtn.querySelector('span');
+      if (btnSpan) btnSpan.textContent = config.footerAboutButtonText;
+      footerAboutBtn.href = config.footerAboutButtonUrl;
+    }
+
+    const footerHelpText = document.getElementById('footer-help-text');
+    if (footerHelpText && config.footerContactHelpHtml) {
+      // Use innerHTML for potential simple formatting like <br>
+      footerHelpText.innerHTML = config.footerContactHelpHtml;
+    }
+
+    const footerPhone = document.getElementById('footer-phone');
+    if (footerPhone && config.footerPhoneNumber) {
+      const phoneSpan = footerPhone.querySelector('span');
+      if (phoneSpan) phoneSpan.textContent = config.footerPhoneNumber;
+      footerPhone.href = `tel:${config.footerPhoneNumber.replace(/\s+/g, '')}`; // Make it a tel link
+    }
+
+    const footerAddress = document.getElementById('footer-address');
+    if (footerAddress && config.footerAddress) {
+      footerAddress.textContent = config.footerAddress;
+    }
+
+    const footerDirectionsBtn = document.getElementById('footer-directions-btn');
+    if (footerDirectionsBtn && config.footerDirectionsLinkText && config.footerDirectionsLinkUrl) {
+      const btnSpan = footerDirectionsBtn.querySelector('span');
+      if (btnSpan) btnSpan.textContent = config.footerDirectionsLinkText;
+      footerDirectionsBtn.href = config.footerDirectionsLinkUrl;
+    }
+
+    // Social Links
+    const facebookLink = document.getElementById('footer-social-facebook');
+    if (facebookLink && config.socialFacebookUrl) facebookLink.href = config.socialFacebookUrl;
+    else if (facebookLink) facebookLink.style.display = 'none'; // Hide if no URL
+
+    const instagramLink = document.getElementById('footer-social-instagram');
+    if (instagramLink && config.socialInstagramUrl) instagramLink.href = config.socialInstagramUrl;
+    else if (instagramLink) instagramLink.style.display = 'none';
+
+    const twitterLink = document.getElementById('footer-social-twitter');
+    if (twitterLink && config.socialTwitterUrl) twitterLink.href = config.socialTwitterUrl;
+    else if (twitterLink) twitterLink.style.display = 'none';
+
+    // Copyright Area
+    const copyrightText = document.getElementById('footer-copyright-text');
+    if (copyrightText && config.footerCopyrightText) {
+      copyrightText.textContent = config.footerCopyrightText + ' '; // Add space before link
+    }
+
+    const copyrightLink = document.getElementById('footer-copyright-link');
+    if (copyrightLink && config.footerCopyrightLinkText && config.footerCopyrightLinkUrl) {
+      copyrightLink.textContent = config.footerCopyrightLinkText;
+      copyrightLink.href = config.footerCopyrightLinkUrl;
+    } else if (copyrightLink) {
+      copyrightLink.style.display = 'none'; // Hide if no text/URL
+    }
+
+    // Bottom Links
+    const termsLink = document.getElementById('footer-terms-link');
+    if (termsLink && config.footerTermsLinkUrl) termsLink.href = config.footerTermsLinkUrl;
+    else if (termsLink) termsLink.parentElement.style.display = 'none'; // Hide li if no URL
+
+    const privacyLink = document.getElementById('footer-privacy-link');
+    if (privacyLink && config.footerPrivacyLinkUrl) privacyLink.href = config.footerPrivacyLinkUrl;
+    else if (privacyLink) privacyLink.parentElement.style.display = 'none';
+
+    const cookiesLink = document.getElementById('footer-cookies-link');
+    if (cookiesLink && config.footerCookiesLinkUrl) cookiesLink.href = config.footerCookiesLinkUrl;
+    else if (cookiesLink) cookiesLink.parentElement.style.display = 'none';
+
+    // --- 4.5 Populate Header Button ---
+    const headerButton = document.getElementById('header-appointment-btn');
+    const btnContainer = headerButton ? headerButton.closest('.d-xl-flex') : null;
+
+    if (headerButton && config.headerButtonText && config.headerButtonUrl) {
+      const btnSpan = headerButton.querySelector('span');
+      if (btnSpan) btnSpan.textContent = config.headerButtonText;
+      headerButton.href = config.headerButtonUrl;
+      if (btnContainer) {
+        btnContainer.style.display = '';
+      }
+    } else if (btnContainer) {
+      // Hide the button's container completely if no data from Contentful
+      btnContainer.style.display = 'none';
+      console.log("Header appointment button container hidden due to missing Contentful data.");
+    }
+    // --- End Header Button Population ---
+
+    // --- 4.6 Populate Contact Form Subjects (Index Page) ---
+    const indexSubjectSelect = document.getElementById('index-contact-subject-select');
+    if (indexSubjectSelect && config.contactFormSubjects) {
+      // Clear existing static/default options (keeping the first placeholder)
+      const firstOption = indexSubjectSelect.options[0];
+      indexSubjectSelect.innerHTML = ''; // Clear existing options
+
+      // Add back placeholder ensuring its value is empty
+      let placeholderOption;
+      if (firstOption && firstOption.textContent === "Do you use OpenDental PMS?") { // Check text content
+        placeholderOption = firstOption;
+      } else {
+        // Or create a new default placeholder with empty value
+        placeholderOption = document.createElement('option');
+        placeholderOption.textContent = "Do you use OpenDental PMS?";
+        placeholderOption.value = "";        // Must be empty for required validation
+        placeholderOption.selected = true;    // Selected by default
+        placeholderOption.disabled = true;   // Optional: prevents re-selection
+        indexSubjectSelect.appendChild(placeholderOption);
+      }
+
+      // Add options from Contentful
+      config.contactFormSubjects.forEach((subjectOption) => {
+        if (subjectOption && subjectOption.fields && subjectOption.fields.subjectText) {
+          const option = document.createElement('option');
+          option.value = subjectOption.fields.subjectText; // Use text as value
+          option.textContent = subjectOption.fields.subjectText;
+          indexSubjectSelect.appendChild(option);
+        }
       });
 
-      if (!entries.items || entries.items.length === 0) {
-        console.error("No 'globalConfig' entry found in Contentful.");
-        return;
-      }
-
-      const config = entries.items[0].fields;
-
-      // 4.1. Set Page Title, Meta Tags & Favicon
-      if (config.siteTitle) {
-        document.title = config.siteTitle;
-      }
-
-      // Set Meta Description
-      const metaDescription = document.getElementById('meta-description');
-      if (metaDescription && config.seoMetaDescription) {
-        metaDescription.setAttribute('content', config.seoMetaDescription);
-      }
-
-      // Set Meta Keywords
-      const metaKeywords = document.getElementById('meta-keywords');
-      if (metaKeywords && config.seoMetaKeywords) {
-        metaKeywords.setAttribute('content', config.seoMetaKeywords);
-      }
-
-      // Set Favicon (remains the same)
-      const favicon = document.getElementById('favicon');
-      if (favicon && config.favicon) {
-        favicon.href = getImageUrl(config.favicon);
-      }
-
-      // 4.2. Set Logos
-      const logoLight = document.getElementById('logo-light');
-      if (logoLight && config.logoLight) {
-        logoLight.src = getImageUrl(config.logoLight);
-      }
-      const logoDark = document.getElementById('logo-dark');
-      if (logoDark && config.logoDark) {
-        logoDark.src = getImageUrl(config.logoDark);
-      }
-
-      // 4.3. Build Main Navigation
-      const navUl = document.getElementById('main-nav-ul');
-      if (navUl && config.mainNavigation) {
-        navUl.innerHTML = ''; // Clear static content
-        config.mainNavigation.forEach(navLink => {
-          if (navLink && navLink.fields) {
-            const fields = navLink.fields;
-            const li = document.createElement('li');
-            li.className = 'nav__item';
-            
-            const a = document.createElement('a');
-            a.href = fields.url || '#';
-            a.className = 'nav__item-link';
-            if (fields.isActive) {
-              a.classList.add('active');
-            }
-            a.textContent = fields.text || '';
-            
-            li.appendChild(a);
-            navUl.appendChild(li);
+      // Re-initialize NiceSelect for this specific dropdown AFTER populating
+      if ($.fn.niceSelect) {
+        try {
+          // Check if NiceSelect is already initialized on this element
+          if ($(indexSubjectSelect).next().hasClass('nice-select')) {
+            $(indexSubjectSelect).niceSelect('update');
+            console.log("NiceSelect updated for index contact subjects.");
+          } else {
+            // Initialize if it wasn't already (might happen depending on load order)
+            $(indexSubjectSelect).niceSelect();
+            console.log("NiceSelect initialized for index contact subjects.");
           }
-        });
-      }
-      // --- 4.x Set Footer Logo ---
-      const footerLogoLight = document.getElementById('footer-logo-light');
-      if (footerLogoLight && config.logoLight) { // Reuse the existing logoLight field
-        const logoUrl = getImageUrl(config.logoLight);
-        if (logoUrl) {
-            footerLogoLight.src = logoUrl;
-            // Optionally update alt text if needed, e.g., from siteTitle
-            footerLogoLight.alt = config.siteTitle ? `${config.siteTitle} Logo` : 'Site Logo';
-        } else {
-             footerLogoLight.style.display = 'none'; // Hide if URL is invalid
+        } catch (e) {
+          console.error("Error updating NiceSelect for index contact subjects:", e);
+          // Fallback: Try initializing directly if update fails
+          try { $(indexSubjectSelect).niceSelect(); } catch (initError) { }
         }
-      } else if (footerLogoLight) {
-         footerLogoLight.style.display = 'none'; // Hide if no logoLight field or element not found
-      }
-      // --- End Footer Logo ---
-
-      // --- 4.4 Populate Footer ---
-      const footerAboutText = document.getElementById('footer-about-text');
-      if (footerAboutText && config.footerAboutText) {
-        footerAboutText.textContent = config.footerAboutText;
       }
 
-      const footerAboutBtn = document.getElementById('footer-about-btn');
-      if (footerAboutBtn && config.footerAboutButtonText && config.footerAboutButtonUrl) {
-        const btnSpan = footerAboutBtn.querySelector('span');
-        if (btnSpan) btnSpan.textContent = config.footerAboutButtonText;
-        footerAboutBtn.href = config.footerAboutButtonUrl;
-      }
-
-      const footerHelpText = document.getElementById('footer-help-text');
-      if (footerHelpText && config.footerContactHelpHtml) {
-        // Use innerHTML for potential simple formatting like <br>
-        footerHelpText.innerHTML = config.footerContactHelpHtml; 
-      }
-
-      const footerPhone = document.getElementById('footer-phone');
-      if (footerPhone && config.footerPhoneNumber) {
-        const phoneSpan = footerPhone.querySelector('span');
-        if (phoneSpan) phoneSpan.textContent = config.footerPhoneNumber;
-        footerPhone.href = `tel:${config.footerPhoneNumber.replace(/\s+/g, '')}`; // Make it a tel link
-      }
-
-      const footerAddress = document.getElementById('footer-address');
-      if (footerAddress && config.footerAddress) {
-        footerAddress.textContent = config.footerAddress;
-      }
-
-      const footerDirectionsBtn = document.getElementById('footer-directions-btn');
-      if (footerDirectionsBtn && config.footerDirectionsLinkText && config.footerDirectionsLinkUrl) {
-          const btnSpan = footerDirectionsBtn.querySelector('span');
-          if(btnSpan) btnSpan.textContent = config.footerDirectionsLinkText;
-          footerDirectionsBtn.href = config.footerDirectionsLinkUrl;
-      }
-      
-      // Social Links
-      const facebookLink = document.getElementById('footer-social-facebook');
-      if (facebookLink && config.socialFacebookUrl) facebookLink.href = config.socialFacebookUrl;
-      else if (facebookLink) facebookLink.style.display = 'none'; // Hide if no URL
-
-      const instagramLink = document.getElementById('footer-social-instagram');
-      if (instagramLink && config.socialInstagramUrl) instagramLink.href = config.socialInstagramUrl;
-       else if (instagramLink) instagramLink.style.display = 'none';
-
-      const twitterLink = document.getElementById('footer-social-twitter');
-      if (twitterLink && config.socialTwitterUrl) twitterLink.href = config.socialTwitterUrl;
-       else if (twitterLink) twitterLink.style.display = 'none';
-
-      // Copyright Area
-      const copyrightText = document.getElementById('footer-copyright-text');
-      if (copyrightText && config.footerCopyrightText) {
-          copyrightText.textContent = config.footerCopyrightText + ' '; // Add space before link
-      }
-      
-      const copyrightLink = document.getElementById('footer-copyright-link');
-       if (copyrightLink && config.footerCopyrightLinkText && config.footerCopyrightLinkUrl) {
-          copyrightLink.textContent = config.footerCopyrightLinkText;
-          copyrightLink.href = config.footerCopyrightLinkUrl;
-      } else if (copyrightLink) {
-          copyrightLink.style.display = 'none'; // Hide if no text/URL
-      }
-
-      // Bottom Links
-      const termsLink = document.getElementById('footer-terms-link');
-      if (termsLink && config.footerTermsLinkUrl) termsLink.href = config.footerTermsLinkUrl;
-      else if (termsLink) termsLink.parentElement.style.display = 'none'; // Hide li if no URL
-
-      const privacyLink = document.getElementById('footer-privacy-link');
-      if (privacyLink && config.footerPrivacyLinkUrl) privacyLink.href = config.footerPrivacyLinkUrl;
-       else if (privacyLink) privacyLink.parentElement.style.display = 'none';
-
-      const cookiesLink = document.getElementById('footer-cookies-link');
-      if (cookiesLink && config.footerCookiesLinkUrl) cookiesLink.href = config.footerCookiesLinkUrl;
-      else if (cookiesLink) cookiesLink.parentElement.style.display = 'none';
-
-      // --- 4.5 Populate Header Button ---
-      const headerButton = document.getElementById('header-appointment-btn');
-      const btnContainer = headerButton ? headerButton.closest('.d-xl-flex') : null; 
-
-      if (headerButton && config.headerButtonText && config.headerButtonUrl) {
-        const btnSpan = headerButton.querySelector('span');
-        if (btnSpan) btnSpan.textContent = config.headerButtonText;
-        headerButton.href = config.headerButtonUrl;
-        if (btnContainer) {
-            btnContainer.style.display = ''; 
-        }
-      } else if (btnContainer) {
-          // Hide the button's container completely if no data from Contentful
-          btnContainer.style.display = 'none';
-          console.log("Header appointment button container hidden due to missing Contentful data.");
-      }
-      // --- End Header Button Population ---
-
-      // --- 4.6 Populate Contact Form Subjects (Index Page) ---
-      const indexSubjectSelect = document.getElementById('index-contact-subject-select');
-      if (indexSubjectSelect && config.contactFormSubjects) {
-        // Clear existing static/default options (keeping the first placeholder)
-         const firstOption = indexSubjectSelect.options[0];
-         indexSubjectSelect.innerHTML = ''; // Clear existing options
-
-         // Add back placeholder ensuring its value is empty
-         if(firstOption && firstOption.textContent === "Do you use OpenDental PMS?"){ // Check text content
-             firstOption.value = ""; // Ensure value is empty for 'required' to work
-             indexSubjectSelect.appendChild(firstOption);
-         } else {
-             // Or create a new default placeholder with empty value
-             const placeholderOption = document.createElement('option');
-             placeholderOption.value = ""; // MUST be empty for 'required'
-             placeholderOption.textContent = "Do you use OpenDental PMS?"; // Or "Select Subject..."
-             placeholderOption.disabled = true; // Optional: visually indicate it's a placeholder
-             placeholderOption.selected = true; // Make it selected by default
-             indexSubjectSelect.appendChild(placeholderOption);
-         }
-
-        // Add options from Contentful
-        config.contactFormSubjects.forEach((subjectOption) => {
-          if (subjectOption && subjectOption.fields && subjectOption.fields.subjectText) {
-            const option = document.createElement('option');
-            option.value = subjectOption.fields.subjectText; // Use text as value
-            option.textContent = subjectOption.fields.subjectText;
-            indexSubjectSelect.appendChild(option);
-          }
-        });
-
-        // Re-initialize NiceSelect for this specific dropdown AFTER populating
-        if ($.fn.niceSelect) {
-             try {
-                 // Check if NiceSelect is already initialized on this element
-                 if ($(indexSubjectSelect).next().hasClass('nice-select')) {
-                     $(indexSubjectSelect).niceSelect('update');
-                     console.log("NiceSelect updated for index contact subjects.");
-                 } else {
-                     // Initialize if it wasn't already (might happen depending on load order)
-                     $(indexSubjectSelect).niceSelect();
-                     console.log("NiceSelect initialized for index contact subjects.");
-                 }
-             } catch (e) {
-                 console.error("Error updating NiceSelect for index contact subjects:", e);
-                 // Fallback: Try initializing directly if update fails
-                 try { $(indexSubjectSelect).niceSelect(); } catch(initError){}
-             }
-         }
-
-      } else if (indexSubjectSelect) {
-          console.warn("Index subject select element found, but no subjects linked in Contentful Global Config.");
-          // Optional: Clear or add a 'no subjects' option
-          // indexSubjectSelect.innerHTML = '<option value="0">No Subjects Available</option>';
-          // Update NiceSelect even if empty
-          // if ($.fn.niceSelect) { $(indexSubjectSelect).niceSelect('update'); }
-      }
-      // --- End Index Subject Population ---
-
-    } catch (error) {
-      console.error("Error fetching global config:", error);
+    } else if (indexSubjectSelect) {
+      console.warn("Index subject select element found, but no subjects linked in Contentful Global Config.");
+      // Optional: Clear or add a 'no subjects' option
+      // indexSubjectSelect.innerHTML = '<option value="0">No Subjects Available</option>';
+      // Update NiceSelect even if empty
+      // if ($.fn.niceSelect) { $(indexSubjectSelect).niceSelect('update'); }
     }
+    // --- End Index Subject Population ---
+
+  } catch (error) {
+    console.error("Error fetching global config:", error);
   }
+}
 
-  /**
-   * Fetches the Hero Slider section.
-   */
-  async function fetchHeroSlider() {
-    try {
-      const entries = await client.getEntries({
-        content_type: 'pageSectionHero',
-        limit: 1, // Only one Hero section
-        include: 2 // Get the linked 'heroSlide' entries
-      });
+/**
+ * Fetches the Hero Slider section.
+ */
+async function fetchHeroSlider() {
+  try {
+    const entries = await client.getEntries({
+      content_type: 'pageSectionHero',
+      limit: 1, // Only one Hero section
+      include: 2 // Get the linked 'heroSlide' entries
+    });
 
-      if (!entries.items || entries.items.length === 0) {
-        console.error("No 'pageSectionHero' entry found in Contentful.");
-        return;
-      }
+    if (!entries.items || entries.items.length === 0) {
+      console.error("No 'pageSectionHero' entry found in Contentful.");
+      return;
+    }
 
-      const heroSection = entries.items[0].fields;
-      const sliderContainer = document.getElementById('hero-slider-container');
+    const heroSection = entries.items[0].fields;
+    const sliderContainer = document.getElementById('hero-slider-container');
 
-      if (!sliderContainer || !heroSection.slides) {
-        return;
-      }
+    if (!sliderContainer || !heroSection.slides) {
+      return;
+    }
 
-      sliderContainer.innerHTML = ''; // Clear static slides
+    sliderContainer.innerHTML = ''; // Clear static slides
 
-      heroSection.slides.forEach(slide => {
-        if (slide && slide.fields) {
-          const fields = slide.fields;
-          const imageUrl = getImageUrl(fields.backgroundImage);
+    heroSection.slides.forEach(slide => {
+      if (slide && slide.fields) {
+        const fields = slide.fields;
+        const imageUrl = getImageUrl(fields.backgroundImage);
 
-          // Create the slide element based on the *exact* HTML structure
-          const slideDiv = document.createElement('div');
-          slideDiv.className = 'slide-item align-v-h';
-          
-        const imageAlt = fields.backgroundImage?.fields?.description || fields.title || 'Slider background'; 
+        // Create the slide element based on the *exact* HTML structure
+        const slideDiv = document.createElement('div');
+        slideDiv.className = 'slide-item align-v-h';
+
+        const imageAlt = fields.backgroundImage?.fields?.description || fields.title || 'Slider background';
 
         slideDiv.innerHTML = `
           <div class="bg-img"><img src="${imageUrl}" alt="${imageAlt}"></div> 
@@ -347,51 +347,51 @@
             </div>
           </div>
         `;
-          sliderContainer.appendChild(slideDiv);
-        }
-      });
+        sliderContainer.appendChild(slideDiv);
+      }
+    });
 
-    } catch (error) {
-      console.error("Error fetching hero slider:", error);
-    }
+  } catch (error) {
+    console.error("Error fetching hero slider:", error);
   }
+}
 
-  /**
-   * Fetches the Features Carousel section.
-   * NOTE: This version omits the icon as requested.
-   */
-  async function fetchFeaturesCarousel() {
-    try {
-      const entries = await client.getEntries({
-        content_type: 'pageSectionFeatures',
-        limit: 1,
-        include: 2 // Get the linked 'featureItem' entries
-      });
+/**
+ * Fetches the Features Carousel section.
+ * NOTE: This version omits the icon as requested.
+ */
+async function fetchFeaturesCarousel() {
+  try {
+    const entries = await client.getEntries({
+      content_type: 'pageSectionFeatures',
+      limit: 1,
+      include: 2 // Get the linked 'featureItem' entries
+    });
 
-      if (!entries.items || entries.items.length === 0) {
-        console.error("No 'pageSectionFeatures' entry found in Contentful.");
-        return;
-      }
+    if (!entries.items || entries.items.length === 0) {
+      console.error("No 'pageSectionFeatures' entry found in Contentful.");
+      return;
+    }
 
-      const featuresSection = entries.items[0].fields;
-      const carouselContainer = document.getElementById('features-carousel-container');
-      
-      if (!carouselContainer || !featuresSection.features) {
-        return;
-      }
+    const featuresSection = entries.items[0].fields;
+    const carouselContainer = document.getElementById('features-carousel-container');
 
-      carouselContainer.innerHTML = ''; // Clear static features
+    if (!carouselContainer || !featuresSection.features) {
+      return;
+    }
 
-      featuresSection.features.forEach(item => {
-        if (item && item.fields) {
-          const fields = item.fields;
-          
-          // Create the feature element.
-          // The 'feature__icon' div is intentionally left out, as requested.
-          const featureDiv = document.createElement('div');
-          featureDiv.className = 'feature-item d-flex';
-          
-          featureDiv.innerHTML = `
+    carouselContainer.innerHTML = ''; // Clear static features
+
+    featuresSection.features.forEach(item => {
+      if (item && item.fields) {
+        const fields = item.fields;
+
+        // Create the feature element.
+        // The 'feature__icon' div is intentionally left out, as requested.
+        const featureDiv = document.createElement('div');
+        featureDiv.className = 'feature-item d-flex';
+
+        featureDiv.innerHTML = `
             <div class="feature__content">
               <h4 class="feature__title">${fields.title || ''}</h4>
               <p class="feature__desc">${fields.description || ''}</p>
@@ -401,245 +401,245 @@
               </a>
             </div>
           `;
-          carouselContainer.appendChild(featureDiv);
-        }
-      });
+        carouselContainer.appendChild(featureDiv);
+      }
+    });
 
-    } catch (error) {
-      console.error("Error fetching features carousel:", error);
-    }
+  } catch (error) {
+    console.error("Error fetching features carousel:", error);
   }
+}
 
-  /**
-   * Fetches the About (with Image) section ('About Layout 4' in HTML).
-   */
-  async function fetchAboutImageSection() {
-    try {
-      const entries = await client.getEntries({
-        content_type: 'pageSectionAboutImage', // Make sure this API ID matches your Contentful model
-        limit: 1
-      });
+/**
+ * Fetches the About (with Image) section ('About Layout 4' in HTML).
+ */
+async function fetchAboutImageSection() {
+  try {
+    const entries = await client.getEntries({
+      content_type: 'pageSectionAboutImage', // Make sure this API ID matches your Contentful model
+      limit: 1
+    });
 
-      if (!entries.items || entries.items.length === 0) {
-        console.warn("No 'pageSectionAboutImage' entry found in Contentful.");
-        // Optional: Hide the section if no content is found
-        const sectionElement = document.getElementById('about-layout4-section');
-        if (sectionElement) sectionElement.style.display = 'none';
-        return;
-      }
-
-      const fields = entries.items[0].fields;
-
-      // Update Text Content
-      const heading = document.getElementById('about-heading');
-      if (heading) heading.textContent = fields.heading || '';
-
-      const p1 = document.getElementById('about-p1');
-      if (p1) p1.textContent = fields.paragraph1 || '';
-
-      const p2 = document.getElementById('about-p2');
-      if (p2) p2.textContent = fields.paragraph2 || '';
-
-      // --- IMAGE HANDLING ---
-      const imageContainer = document.getElementById('about-image-container'); // Target the container div
-      const imageElement = document.getElementById('about-image'); // Target the img tag
-      
-      if (imageContainer && imageElement && fields.image) {
-        const imageUrl = getImageUrl(fields.image); // Use helper function
-        if (imageUrl) {
-            imageElement.src = imageUrl;
-            // Set alt text from image description or fallback to heading
-            imageElement.alt = fields.image.fields?.description || fields.heading || 'About section image';
-            imageElement.style.borderRadius = '15px';
-            imageContainer.style.display = ''; // Ensure container is visible
-        } else {
-            // Hide the image and container if image URL is invalid
-            console.warn("Image found in Contentful but URL is missing.");
-            imageContainer.style.display = 'none';
-        }
-      } else if (imageContainer) {
-         // Hide container if no image field in Contentful or elements not found in HTML
-         imageContainer.style.display = 'none';
-      }
-      // --- END IMAGE HANDLING ---
-
-    } catch (error) {
-      console.error("Error fetching about image section:", error);
+    if (!entries.items || entries.items.length === 0) {
+      console.warn("No 'pageSectionAboutImage' entry found in Contentful.");
+      // Optional: Hide the section if no content is found
+      const sectionElement = document.getElementById('about-layout4-section');
+      if (sectionElement) sectionElement.style.display = 'none';
+      return;
     }
+
+    const fields = entries.items[0].fields;
+
+    // Update Text Content
+    const heading = document.getElementById('about-heading');
+    if (heading) heading.textContent = fields.heading || '';
+
+    const p1 = document.getElementById('about-p1');
+    if (p1) p1.textContent = fields.paragraph1 || '';
+
+    const p2 = document.getElementById('about-p2');
+    if (p2) p2.textContent = fields.paragraph2 || '';
+
+    // --- IMAGE HANDLING ---
+    const imageContainer = document.getElementById('about-image-container'); // Target the container div
+    const imageElement = document.getElementById('about-image'); // Target the img tag
+
+    if (imageContainer && imageElement && fields.image) {
+      const imageUrl = getImageUrl(fields.image); // Use helper function
+      if (imageUrl) {
+        imageElement.src = imageUrl;
+        // Set alt text from image description or fallback to heading
+        imageElement.alt = fields.image.fields?.description || fields.heading || 'About section image';
+        imageElement.style.borderRadius = '15px';
+        imageContainer.style.display = ''; // Ensure container is visible
+      } else {
+        // Hide the image and container if image URL is invalid
+        console.warn("Image found in Contentful but URL is missing.");
+        imageContainer.style.display = 'none';
+      }
+    } else if (imageContainer) {
+      // Hide container if no image field in Contentful or elements not found in HTML
+      imageContainer.style.display = 'none';
+    }
+    // --- END IMAGE HANDLING ---
+
+  } catch (error) {
+    console.error("Error fetching about image section:", error);
   }
+}
 
-  async function fetchFeaturesLayout1Section() {
-    try {
-      const entries = await client.getEntries({
-        content_type: 'pageSectionFeaturesLayout1', // API ID of the section model
-        limit: 1,
-        include: 2 // Include linked feature items
-      });
+async function fetchFeaturesLayout1Section() {
+  try {
+    const entries = await client.getEntries({
+      content_type: 'pageSectionFeaturesLayout1', // API ID of the section model
+      limit: 1,
+      include: 2 // Include linked feature items
+    });
 
-      if (!entries.items || entries.items.length === 0) {
-        console.warn("No 'pageSectionFeaturesLayout1' entry found in Contentful.");
-        // Optional: Hide section
-        // const sectionElement = document.getElementById('features-layout1-section');
-        // if (sectionElement) sectionElement.style.display = 'none';
-        return;
+    if (!entries.items || entries.items.length === 0) {
+      console.warn("No 'pageSectionFeaturesLayout1' entry found in Contentful.");
+      // Optional: Hide section
+      // const sectionElement = document.getElementById('features-layout1-section');
+      // if (sectionElement) sectionElement.style.display = 'none';
+      return;
+    }
+
+    const fields = entries.items[0].fields;
+
+    // Set Background Image (Targeting the parent section)
+    const sectionElement = document.getElementById('features-layout1-section');
+    if (sectionElement && fields.backgroundImage) {
+      const bgImageUrl = getImageUrl(fields.backgroundImage);
+      if (bgImageUrl) {
+        // The template uses a nested div for the bg-img, apply style to parent
+        sectionElement.style.backgroundImage = `url(${bgImageUrl})`;
+        // Add classes needed by the template's CSS for positioning/overlay
+        sectionElement.classList.add('bg-img');
       }
+    }
 
-      const fields = entries.items[0].fields;
+    // Update Heading
+    const heading = document.getElementById('features-l1-heading');
+    if (heading) heading.textContent = fields.mainHeading || '';
 
-      // Set Background Image (Targeting the parent section)
-      const sectionElement = document.getElementById('features-layout1-section');
-      if (sectionElement && fields.backgroundImage) {
-        const bgImageUrl = getImageUrl(fields.backgroundImage);
-        if (bgImageUrl) {
-          // The template uses a nested div for the bg-img, apply style to parent
-          sectionElement.style.backgroundImage = `url(${bgImageUrl})`;
-          // Add classes needed by the template's CSS for positioning/overlay
-          sectionElement.classList.add('bg-img'); 
-        }
-      }
+    // Update Description
+    const description = document.getElementById('features-l1-desc');
+    if (description) description.textContent = fields.description || '';
 
-      // Update Heading
-      const heading = document.getElementById('features-l1-heading');
-      if (heading) heading.textContent = fields.mainHeading || '';
+    // Update Button
+    const button = document.getElementById('features-l1-button');
+    if (button) {
+      const buttonSpan = button.querySelector('span');
+      if (buttonSpan) buttonSpan.textContent = fields.buttonText || 'Learn More';
+      button.href = fields.buttonUrl || '#';
+    }
 
-      // Update Description
-      const description = document.getElementById('features-l1-desc');
-      if (description) description.textContent = fields.description || '';
+    // Update Footer Text and Link
+    const footerTextElement = document.getElementById('features-l1-footer-text');
+    if (footerTextElement) {
+      // Clear existing content first
+      footerTextElement.innerHTML = '';
+      // Add the main text
+      footerTextElement.appendChild(document.createTextNode(fields.footerText || ''));
 
-      // Update Button
-      const button = document.getElementById('features-l1-button');
-      if (button) {
-        const buttonSpan = button.querySelector('span');
-        if (buttonSpan) buttonSpan.textContent = fields.buttonText || 'Learn More';
-        button.href = fields.buttonUrl || '#';
-      }
-
-      // Update Footer Text and Link
-      const footerTextElement = document.getElementById('features-l1-footer-text');
-      if (footerTextElement) {
-          // Clear existing content first
-          footerTextElement.innerHTML = ''; 
-          // Add the main text
-          footerTextElement.appendChild(document.createTextNode(fields.footerText || '')); 
-          
-          // Add the link if text and URL exist
-          if (fields.footerLinkText && fields.footerLinkUrl) {
-              footerTextElement.appendChild(document.createTextNode(' ')); // Add space before link
-              const footerLink = document.createElement('a');
-              footerLink.href = fields.footerLinkUrl;
-              footerLink.className = 'color-secondary'; // Match template style
-              footerLink.innerHTML = `
+      // Add the link if text and URL exist
+      if (fields.footerLinkText && fields.footerLinkUrl) {
+        footerTextElement.appendChild(document.createTextNode(' ')); // Add space before link
+        const footerLink = document.createElement('a');
+        footerLink.href = fields.footerLinkUrl;
+        footerLink.className = 'color-secondary'; // Match template style
+        footerLink.innerHTML = `
                   <span>${fields.footerLinkText}</span> <i class="icon-arrow-right"></i>
               `;
-              footerTextElement.appendChild(footerLink);
-          }
+        footerTextElement.appendChild(footerLink);
       }
+    }
 
-      // Generate Feature Items
-      const itemsContainer = document.getElementById('features-l1-items-container');
-      if (itemsContainer && fields.featureItems) {
-        itemsContainer.innerHTML = ''; // Clear static items
-        fields.featureItems.forEach(item => {
-          if (item && item.fields) {
-            const itemFields = item.fields;
-            const colDiv = document.createElement('div');
-            colDiv.className = 'col-sm-6 col-md-6 col-lg-3'; // Use template's column classes
-            
-            const iconUrl = itemFields.icon ? getImageUrl(itemFields.icon) : '';
-            const iconAlt = itemFields.icon?.fields?.description || itemFields.title || 'Feature icon'; // Alt text
-            const iconSize = '50px'; // Define desired icon size (adjust as needed)
+    // Generate Feature Items
+    const itemsContainer = document.getElementById('features-l1-items-container');
+    if (itemsContainer && fields.featureItems) {
+      itemsContainer.innerHTML = ''; // Clear static items
+      fields.featureItems.forEach(item => {
+        if (item && item.fields) {
+          const itemFields = item.fields;
+          const colDiv = document.createElement('div');
+          colDiv.className = 'col-sm-6 col-md-6 col-lg-3'; // Use template's column classes
 
-            // Recreate the HTML structure using an <img> tag for the SVG
-            colDiv.innerHTML = `
+          const iconUrl = itemFields.icon ? getImageUrl(itemFields.icon) : '';
+          const iconAlt = itemFields.icon?.fields?.description || itemFields.title || 'Feature icon'; // Alt text
+          const iconSize = '50px'; // Define desired icon size (adjust as needed)
+
+          // Recreate the HTML structure using an <img> tag for the SVG
+          colDiv.innerHTML = `
               <div class="feature-item">
                 <div class="feature__content">
                   <div class="feature__icon">
-                    ${iconUrl ? 
-                      `<img 
+                    ${iconUrl ?
+              `<img 
                          src="${iconUrl}" 
                          alt="${iconAlt}" 
                          style="width: ${iconSize}; height: ${iconSize}; object-fit: contain;"
-                       >` : 
-                      '<span style="display: inline-block; width: 50px; height: 50px;"></span>' // Placeholder if no icon
-                    }
+                       >` :
+              '<span style="display: inline-block; width: 50px; height: 50px;"></span>' // Placeholder if no icon
+            }
 
                     </div>
                   <h4 class="feature__title">${itemFields.title || ''}</h4>
                 </div><a href="${itemFields.linkUrl || '#'}" class="btn__link">
                   <i class="icon-arrow-right icon-outlined"></i> </a>
               </div>`;
-            itemsContainer.appendChild(colDiv);
-          }
-        });
-      }
-
-    } catch (error) {
-      console.error("Error fetching Features Layout 1 section:", error);
-    }
-  }
-
-
-  async function fetchWorkProcessSection() {
-    try {
-      const entries = await client.getEntries({
-        content_type: 'pageSectionWorkProcess',
-        limit: 1,
-        include: 2 // Include linked process items
-      });
-
-      if (!entries.items || entries.items.length === 0) {
-        console.warn("No 'pageSectionWorkProcess' entry found in Contentful.");
-        // Optional: Hide section
-        // const sectionElement = document.getElementById('work-process-section');
-        // if (sectionElement) sectionElement.style.display = 'none';
-        return;
-      }
-
-      const fields = entries.items[0].fields;
-
-      // Set Background Image (Targeting the parent section)
-      const sectionElement = document.getElementById('work-process-section');
-      if (sectionElement && fields.backgroundImage) {
-        const bgImageUrl = getImageUrl(fields.backgroundImage);
-        if (bgImageUrl) {
-          // Apply directly to the section tag which has the bg-img class in the original HTML
-          sectionElement.style.backgroundImage = `url(${bgImageUrl})`;
+          itemsContainer.appendChild(colDiv);
         }
+      });
+    }
+
+  } catch (error) {
+    console.error("Error fetching Features Layout 1 section:", error);
+  }
+}
+
+
+async function fetchWorkProcessSection() {
+  try {
+    const entries = await client.getEntries({
+      content_type: 'pageSectionWorkProcess',
+      limit: 1,
+      include: 2 // Include linked process items
+    });
+
+    if (!entries.items || entries.items.length === 0) {
+      console.warn("No 'pageSectionWorkProcess' entry found in Contentful.");
+      // Optional: Hide section
+      // const sectionElement = document.getElementById('work-process-section');
+      // if (sectionElement) sectionElement.style.display = 'none';
+      return;
+    }
+
+    const fields = entries.items[0].fields;
+
+    // Set Background Image (Targeting the parent section)
+    const sectionElement = document.getElementById('work-process-section');
+    if (sectionElement && fields.backgroundImage) {
+      const bgImageUrl = getImageUrl(fields.backgroundImage);
+      if (bgImageUrl) {
+        // Apply directly to the section tag which has the bg-img class in the original HTML
+        sectionElement.style.backgroundImage = `url(${bgImageUrl})`;
       }
+    }
 
-      // Update Heading Area
-      const subtitle = document.getElementById('work-process-subtitle');
-      if (subtitle) subtitle.textContent = fields.subtitle || '';
+    // Update Heading Area
+    const subtitle = document.getElementById('work-process-subtitle');
+    if (subtitle) subtitle.textContent = fields.subtitle || '';
 
-      const title = document.getElementById('work-process-title');
-      if (title) title.textContent = fields.title || '';
+    const title = document.getElementById('work-process-title');
+    if (title) title.textContent = fields.title || '';
 
-      const description = document.getElementById('work-process-desc');
-      if (description) description.textContent = fields.description || '';
+    const description = document.getElementById('work-process-desc');
+    if (description) description.textContent = fields.description || '';
 
-      // Update List Items
-      const listUl = document.getElementById('work-process-list');
-      if (listUl && fields.listItems && fields.listItems.length > 0) {
-        listUl.innerHTML = ''; // Clear static list
-        fields.listItems.forEach(itemText => {
-          const li = document.createElement('li');
-          li.textContent = itemText;
-          listUl.appendChild(li);
-        });
-      } else if (listUl) {
-         listUl.innerHTML = ''; // Clear if no items
-      }
+    // Update List Items
+    const listUl = document.getElementById('work-process-list');
+    if (listUl && fields.listItems && fields.listItems.length > 0) {
+      listUl.innerHTML = ''; // Clear static list
+      fields.listItems.forEach(itemText => {
+        const li = document.createElement('li');
+        li.textContent = itemText;
+        listUl.appendChild(li);
+      });
+    } else if (listUl) {
+      listUl.innerHTML = ''; // Clear if no items
+    }
 
-      // Generate Process Steps Carousel Items
-      const stepsContainer = document.getElementById('work-process-steps-container');
-      if (stepsContainer && fields.processSteps) {
-        stepsContainer.innerHTML = ''; // Clear static items
-        fields.processSteps.forEach(item => {
-          if (item && item.fields) {
-            const itemFields = item.fields;
-            const stepDiv = document.createElement('div'); // Slick needs direct children
-            // Recreate the exact HTML structure for a process item
-            const iconUrl = itemFields.icon ? getImageUrl(itemFields.icon) : '';
+    // Generate Process Steps Carousel Items
+    const stepsContainer = document.getElementById('work-process-steps-container');
+    if (stepsContainer && fields.processSteps) {
+      stepsContainer.innerHTML = ''; // Clear static items
+      fields.processSteps.forEach(item => {
+        if (item && item.fields) {
+          const itemFields = item.fields;
+          const stepDiv = document.createElement('div'); // Slick needs direct children
+          // Recreate the exact HTML structure for a process item
+          const iconUrl = itemFields.icon ? getImageUrl(itemFields.icon) : '';
           const iconAlt = itemFields.icon?.fields?.description || itemFields.title || 'Process step icon';
           const iconSize = '55px'; // Match original CSS icon size - adjust if needed
 
@@ -648,14 +648,14 @@
             <div class="process-item">
               <span class="process__number">${itemFields.stepNumber || ''}</span>
               <div class="process__icon">
-                ${iconUrl ? 
-                  `<img 
+                ${iconUrl ?
+              `<img 
                      src="${iconUrl}" 
                      alt="${iconAlt}" 
                      style="width: ${iconSize}; height: ${iconSize}; object-fit: contain;"
-                   >` : 
-                  '<span style="display: inline-block; width: 55px; height: 55px;"></span>' // Placeholder
-                }
+                   >` :
+              '<span style="display: inline-block; width: 55px; height: 55px;"></span>' // Placeholder
+            }
               </div><h4 class="process__title pt-20">${itemFields.title || ''}</h4>
               <p class="process__desc">${itemFields.description || ''}</p>
               <a href="${itemFields.linkUrl || '#'}" class="btn btn__secondary btn__link">
@@ -663,170 +663,170 @@
                 <i class="icon-arrow-right"></i> </a>
             </div>`;
           stepsContainer.appendChild(stepDiv);
-          }
-        });
-      }
-
-      // Update CTA Banner
-      const ctaImage = document.getElementById('work-process-cta-image');
-      if (ctaImage && fields.ctaImage) {
-          const ctaImageUrl = getImageUrl(fields.ctaImage);
-          ctaImage.src = ctaImageUrl || '';
-          ctaImage.alt = fields.ctaImage.fields?.description || 'CTA Icon';
-      } else if (ctaImage) {
-          ctaImage.src = ''; // Clear if no image
-          ctaImage.alt = '';
-      }
-
-      const ctaTitle = document.getElementById('work-process-cta-title');
-      if (ctaTitle) ctaTitle.textContent = fields.ctaTitle || '';
-
-      const ctaDesc = document.getElementById('work-process-cta-desc');
-      if (ctaDesc) ctaDesc.textContent = fields.ctaDescription || '';
-
-      const ctaButton = document.getElementById('work-process-cta-button');
-      if (ctaButton) {
-        const ctaButtonSpan = ctaButton.querySelector('span');
-        if (ctaButtonSpan) ctaButtonSpan.textContent = fields.ctaButtonText || 'Learn More';
-        ctaButton.href = fields.ctaButtonUrl || '#';
-      }
-
-    } catch (error) {
-      console.error("Error fetching Work Process section:", error);
-    }
-  }
-
-
-  async function fetchContactSection() {
-    try {
-      const entries = await client.getEntries({
-        content_type: 'pageSectionContact',
-        limit: 1,
-        include: 1 // Only need 1 level deep for this section
-      });
-
-      if (!entries.items || entries.items.length === 0) {
-        console.warn("No 'pageSectionContact' entry found in Contentful.");
-        // Optional: Hide section
-        // const sectionElement = document.getElementById('contact-layout5-section');
-        // if (sectionElement) sectionElement.style.display = 'none';
-        return;
-      }
-
-      const fields = entries.items[0].fields;
-
-      // Set Background Image
-      const sectionElement = document.getElementById('contact-layout5-section');
-      if (sectionElement && fields.backgroundImage) {
-        const bgImageUrl = getImageUrl(fields.backgroundImage);
-        if (bgImageUrl) {
-          // The template uses a nested div, but also applies styles directly. Let's try direct.
-          sectionElement.style.backgroundImage = `url(${bgImageUrl})`;
-          sectionElement.style.backgroundRepeat = 'no-repeat'; // Add this line
-            sectionElement.style.backgroundSize = 'cover';     // Add this line
-            sectionElement.style.backgroundPosition = 'center center';
-          // Ensure the overlay class remains if needed
-          sectionElement.classList.add('bg-overlay', 'bg-overlay-blue-gradient'); 
         }
-      }
-
-      // Update Heading Area (Left Side)
-      const heading = document.getElementById('contact-l5-heading');
-      if (heading) heading.textContent = fields.heading || '';
-
-      const description = document.getElementById('contact-l5-desc');
-      if (description) description.textContent = fields.description || '';
-
-      // Update List Items (Left Side)
-      const listUl = document.getElementById('contact-l5-list');
-      if (listUl && fields.listItems && fields.listItems.length > 0) {
-        listUl.innerHTML = ''; // Clear static list
-        fields.listItems.forEach(itemText => {
-          const li = document.createElement('li');
-          li.textContent = itemText;
-          listUl.appendChild(li);
-        });
-      } else if (listUl) {
-         listUl.innerHTML = ''; // Clear if no items
-      }
-
-      // Update Contact Form Text (Right Side)
-      const formTitle = document.getElementById('contact-l5-form-title');
-      if (formTitle) formTitle.textContent = fields.formTitle || '';
-
-      const formDesc = document.getElementById('contact-l5-form-desc');
-      if (formDesc) formDesc.textContent = fields.formDescription || '';
-
-      const formButton = document.getElementById('contact-l5-form-button');
-      if (formButton) {
-          const buttonSpan = formButton.querySelector('span');
-          if (buttonSpan) buttonSpan.textContent = fields.formSubmitButtonText || 'Submit Request';
-          // Keep the arrow icon
-      }
-
-    } catch (error) {
-      console.error("Error fetching Contact Layout 5 section:", error);
-    }
-  }
-
-
-  async function fetchTestimonialsSection() {
-    try {
-      const entries = await client.getEntries({
-        content_type: 'pageSectionTestimonials', // API ID for the section
-        limit: 1,
-        include: 2 // Include linked testimonial entries
       });
+    }
 
-      if (!entries.items || entries.items.length === 0) {
-        console.warn("No 'pageSectionTestimonials' entry found in Contentful.");
-        // Optional: Hide section
-        // const sectionElement = document.getElementById('testimonials-layout2-section');
-        // if (sectionElement) sectionElement.style.display = 'none';
-        return;
+    // Update CTA Banner
+    const ctaImage = document.getElementById('work-process-cta-image');
+    if (ctaImage && fields.ctaImage) {
+      const ctaImageUrl = getImageUrl(fields.ctaImage);
+      ctaImage.src = ctaImageUrl || '';
+      ctaImage.alt = fields.ctaImage.fields?.description || 'CTA Icon';
+    } else if (ctaImage) {
+      ctaImage.src = ''; // Clear if no image
+      ctaImage.alt = '';
+    }
+
+    const ctaTitle = document.getElementById('work-process-cta-title');
+    if (ctaTitle) ctaTitle.textContent = fields.ctaTitle || '';
+
+    const ctaDesc = document.getElementById('work-process-cta-desc');
+    if (ctaDesc) ctaDesc.textContent = fields.ctaDescription || '';
+
+    const ctaButton = document.getElementById('work-process-cta-button');
+    if (ctaButton) {
+      const ctaButtonSpan = ctaButton.querySelector('span');
+      if (ctaButtonSpan) ctaButtonSpan.textContent = fields.ctaButtonText || 'Learn More';
+      ctaButton.href = fields.ctaButtonUrl || '#';
+    }
+
+  } catch (error) {
+    console.error("Error fetching Work Process section:", error);
+  }
+}
+
+
+async function fetchContactSection() {
+  try {
+    const entries = await client.getEntries({
+      content_type: 'pageSectionContact',
+      limit: 1,
+      include: 1 // Only need 1 level deep for this section
+    });
+
+    if (!entries.items || entries.items.length === 0) {
+      console.warn("No 'pageSectionContact' entry found in Contentful.");
+      // Optional: Hide section
+      // const sectionElement = document.getElementById('contact-layout5-section');
+      // if (sectionElement) sectionElement.style.display = 'none';
+      return;
+    }
+
+    const fields = entries.items[0].fields;
+
+    // Set Background Image
+    const sectionElement = document.getElementById('contact-layout5-section');
+    if (sectionElement && fields.backgroundImage) {
+      const bgImageUrl = getImageUrl(fields.backgroundImage);
+      if (bgImageUrl) {
+        // The template uses a nested div, but also applies styles directly. Let's try direct.
+        sectionElement.style.backgroundImage = `url(${bgImageUrl})`;
+        sectionElement.style.backgroundRepeat = 'no-repeat'; // Add this line
+        sectionElement.style.backgroundSize = 'cover';     // Add this line
+        sectionElement.style.backgroundPosition = 'center center';
+        // Ensure the overlay class remains if needed
+        sectionElement.classList.add('bg-overlay', 'bg-overlay-blue-gradient');
       }
+    }
 
-      const fields = entries.items[0].fields;
+    // Update Heading Area (Left Side)
+    const heading = document.getElementById('contact-l5-heading');
+    if (heading) heading.textContent = fields.heading || '';
 
-      // Update Title (Assuming subtitle might not be in your specific HTML)
-      const title = document.getElementById('testimonials-l2-title');
-      if (title) title.textContent = fields.title || 'Inspiring Stories!'; // Use Contentful title or fallback
+    const description = document.getElementById('contact-l5-desc');
+    if (description) description.textContent = fields.description || '';
 
-      // Get containers for both sliders
-      const quoteSliderContainer = document.getElementById('testimonials-l2-quote-slider');
-      const navSliderContainer = document.getElementById('testimonials-l2-nav-slider');
+    // Update List Items (Left Side)
+    const listUl = document.getElementById('contact-l5-list');
+    if (listUl && fields.listItems && fields.listItems.length > 0) {
+      listUl.innerHTML = ''; // Clear static list
+      fields.listItems.forEach(itemText => {
+        const li = document.createElement('li');
+        li.textContent = itemText;
+        listUl.appendChild(li);
+      });
+    } else if (listUl) {
+      listUl.innerHTML = ''; // Clear if no items
+    }
 
-      if (!quoteSliderContainer || !navSliderContainer || !fields.testimonials) {
-          console.error("Testimonial slider containers or testimonial entries not found.");
-          if(quoteSliderContainer) quoteSliderContainer.innerHTML = ''; // Clear if exists but no content
-          if(navSliderContainer) navSliderContainer.innerHTML = ''; // Clear if exists but no content
-          return;
-      }
+    // Update Contact Form Text (Right Side)
+    const formTitle = document.getElementById('contact-l5-form-title');
+    if (formTitle) formTitle.textContent = fields.formTitle || '';
 
-      // Clear static content
-      quoteSliderContainer.innerHTML = '';
-      navSliderContainer.innerHTML = '';
+    const formDesc = document.getElementById('contact-l5-form-desc');
+    if (formDesc) formDesc.textContent = fields.formDescription || '';
 
-      // Generate Testimonial Slides for BOTH sliders
-      fields.testimonials.forEach(item => {
-        if (item && item.fields) {
-          const itemFields = item.fields;
-          const avatarUrl = itemFields.authorAvatar ? getImageUrl(itemFields.authorAvatar) : 'assets/images/testimonials/thumbs/1.png'; // Fallback image
-          const avatarAlt = itemFields.authorAvatar?.fields?.description || itemFields.authorName || 'Client avatar';
-          
-          // --- Create Quote Slide ---
-          const quoteSlideDiv = document.createElement('div');
-          // The parent div for Slick needs no extra classes here based on original HTML
-          quoteSlideDiv.innerHTML = `
+    const formButton = document.getElementById('contact-l5-form-button');
+    if (formButton) {
+      const buttonSpan = formButton.querySelector('span');
+      if (buttonSpan) buttonSpan.textContent = fields.formSubmitButtonText || 'Submit Request';
+      // Keep the arrow icon
+    }
+
+  } catch (error) {
+    console.error("Error fetching Contact Layout 5 section:", error);
+  }
+}
+
+
+async function fetchTestimonialsSection() {
+  try {
+    const entries = await client.getEntries({
+      content_type: 'pageSectionTestimonials', // API ID for the section
+      limit: 1,
+      include: 2 // Include linked testimonial entries
+    });
+
+    if (!entries.items || entries.items.length === 0) {
+      console.warn("No 'pageSectionTestimonials' entry found in Contentful.");
+      // Optional: Hide section
+      // const sectionElement = document.getElementById('testimonials-layout2-section');
+      // if (sectionElement) sectionElement.style.display = 'none';
+      return;
+    }
+
+    const fields = entries.items[0].fields;
+
+    // Update Title (Assuming subtitle might not be in your specific HTML)
+    const title = document.getElementById('testimonials-l2-title');
+    if (title) title.textContent = fields.title || 'Inspiring Stories!'; // Use Contentful title or fallback
+
+    // Get containers for both sliders
+    const quoteSliderContainer = document.getElementById('testimonials-l2-quote-slider');
+    const navSliderContainer = document.getElementById('testimonials-l2-nav-slider');
+
+    if (!quoteSliderContainer || !navSliderContainer || !fields.testimonials) {
+      console.error("Testimonial slider containers or testimonial entries not found.");
+      if (quoteSliderContainer) quoteSliderContainer.innerHTML = ''; // Clear if exists but no content
+      if (navSliderContainer) navSliderContainer.innerHTML = ''; // Clear if exists but no content
+      return;
+    }
+
+    // Clear static content
+    quoteSliderContainer.innerHTML = '';
+    navSliderContainer.innerHTML = '';
+
+    // Generate Testimonial Slides for BOTH sliders
+    fields.testimonials.forEach(item => {
+      if (item && item.fields) {
+        const itemFields = item.fields;
+        const avatarUrl = itemFields.authorAvatar ? getImageUrl(itemFields.authorAvatar) : 'assets/images/testimonials/thumbs/1.png'; // Fallback image
+        const avatarAlt = itemFields.authorAvatar?.fields?.description || itemFields.authorName || 'Client avatar';
+
+        // --- Create Quote Slide ---
+        const quoteSlideDiv = document.createElement('div');
+        // The parent div for Slick needs no extra classes here based on original HTML
+        quoteSlideDiv.innerHTML = `
             <div class="testimonial-item">
               <h3 class="testimonial__title">${itemFields.quote || ''}</h3>
             </div>`;
-          quoteSliderContainer.appendChild(quoteSlideDiv);
+        quoteSliderContainer.appendChild(quoteSlideDiv);
 
-          // --- Create Navigation Slide ---
-          const navSlideDiv = document.createElement('div');
-              // The parent div for Slick needs no extra classes here
-              navSlideDiv.innerHTML = `
+        // --- Create Navigation Slide ---
+        const navSlideDiv = document.createElement('div');
+        // The parent div for Slick needs no extra classes here
+        navSlideDiv.innerHTML = `
                 <div class="testimonial__meta">
                   <div class="testimonial__thmb">
                     <img 
@@ -839,83 +839,83 @@
                     <p class="testimonial__meta-desc">${itemFields.authorTitle || ''}</p>
                   </div>
                 </div>`;
-              navSliderContainer.appendChild(navSlideDiv);
-        }
-      });
+        navSliderContainer.appendChild(navSlideDiv);
+      }
+    });
 
-    } catch (error) {
-      console.error("Error fetching Testimonials Layout 2 section:", error);
-    }
+  } catch (error) {
+    console.error("Error fetching Testimonials Layout 2 section:", error);
   }
+}
 
-  async function fetchGallerySection() {
-    try {
-      const entries = await client.getEntries({
-        content_type: 'pageSectionGallery',
-        limit: 1,
-        include: 2 // Include linked galleryImage entries
-      });
+async function fetchGallerySection() {
+  try {
+    const entries = await client.getEntries({
+      content_type: 'pageSectionGallery',
+      limit: 1,
+      include: 2 // Include linked galleryImage entries
+    });
 
-      if (!entries.items || entries.items.length === 0) {
-        console.warn("No 'pageSectionGallery' entry found in Contentful.");
-        // Optional: Hide section
-        // const sectionElement = document.getElementById('gallery-section');
-        // if (sectionElement) sectionElement.style.display = 'none';
-        return;
-      }
+    if (!entries.items || entries.items.length === 0) {
+      console.warn("No 'pageSectionGallery' entry found in Contentful.");
+      // Optional: Hide section
+      // const sectionElement = document.getElementById('gallery-section');
+      // if (sectionElement) sectionElement.style.display = 'none';
+      return;
+    }
 
-      const fields = entries.items[0].fields;
-      const galleryContainer = document.getElementById('gallery-carousel-container');
+    const fields = entries.items[0].fields;
+    const galleryContainer = document.getElementById('gallery-carousel-container');
 
-      if (!galleryContainer || !fields.images) {
-        console.error("Gallery container or images not found.");
-         if(galleryContainer) galleryContainer.innerHTML = ''; // Clear if container exists but no images
-        return;
-      }
+    if (!galleryContainer || !fields.images) {
+      console.error("Gallery container or images not found.");
+      if (galleryContainer) galleryContainer.innerHTML = ''; // Clear if container exists but no images
+      return;
+    }
 
-      galleryContainer.innerHTML = ''; // Clear static items
+    galleryContainer.innerHTML = ''; // Clear static items
 
-      // Generate Gallery Items
-      fields.images.forEach(item => {
-        if (item && item.fields && item.fields.imageFile) {
-          const itemFields = item.fields;
-          const imageUrl = getImageUrl(itemFields.imageFile);
-          const altText = itemFields.altText || itemFields.imageFile.fields?.description || 'Gallery image';
-          
-          if (imageUrl) {
-            // Recreate the exact 'a' tag structure for Slick and Magnific Popup
-            const linkElement = document.createElement('a');
-            linkElement.className = 'popup-gallery-item'; // Class needed for Magnific Popup
-            linkElement.href = imageUrl; // Link to the full image for popup
-            
-            linkElement.innerHTML = `
+    // Generate Gallery Items
+    fields.images.forEach(item => {
+      if (item && item.fields && item.fields.imageFile) {
+        const itemFields = item.fields;
+        const imageUrl = getImageUrl(itemFields.imageFile);
+        const altText = itemFields.altText || itemFields.imageFile.fields?.description || 'Gallery image';
+
+        if (imageUrl) {
+          // Recreate the exact 'a' tag structure for Slick and Magnific Popup
+          const linkElement = document.createElement('a');
+          linkElement.className = 'popup-gallery-item'; // Class needed for Magnific Popup
+          linkElement.href = imageUrl; // Link to the full image for popup
+
+          linkElement.innerHTML = `
               <img src="${imageUrl}" alt="${altText}">
             `;
-            galleryContainer.appendChild(linkElement);
-          }
+          galleryContainer.appendChild(linkElement);
         }
-      });
+      }
+    });
 
-    } catch (error) {
-      console.error("Error fetching Gallery section:", error);
-    }
+  } catch (error) {
+    console.error("Error fetching Gallery section:", error);
   }
+}
 
-  // --- 5. INITIALIZATION ---
-  
-  /**
-   * Main function to fetch all content when the page loads.
-   * We use DOMContentLoaded to ensure the HTML elements are ready to be targeted.
-   * This script should run *before* main.js so content is in place
-   * before Slick carousels are initialized.
-   */
-  document.addEventListener('DOMContentLoaded', () => {
-    // Show a loading state if you want
-    // document.body.style.opacity = 0.5; 
+// --- 5. INITIALIZATION ---
 
-    // Fetch all content
-    Promise.all([
-      fetchGlobalConfig(),
+/**
+ * Main function to fetch all content when the page loads.
+ * We use DOMContentLoaded to ensure the HTML elements are ready to be targeted.
+ * This script should run *before* main.js so content is in place
+ * before Slick carousels are initialized.
+ */
+document.addEventListener('DOMContentLoaded', () => {
+  // Show a loading state if you want
+  // document.body.style.opacity = 0.5; 
+
+  // Fetch all content
+  Promise.all([
+    fetchGlobalConfig(),
     fetchHeroSlider(),
     fetchFeaturesCarousel(),
     fetchAboutImageSection(),
@@ -924,47 +924,47 @@
     fetchContactSection(),
     fetchTestimonialsSection(),
     fetchGallerySection()
-      // Add more fetch functions here for other sections
-    ]).then(() => {
-        console.log("All Contentful content loaded successfully.");
+    // Add more fetch functions here for other sections
+  ]).then(() => {
+    console.log("All Contentful content loaded successfully.");
 
-        // --- BACKGROUND IMAGE FIX START ---
-      // Re-run the background image logic specifically for the newly added hero slides
-      const $heroSliderContainer = $('#hero-slider-container');
-      if ($heroSliderContainer.length > 0) {
-          // Find the .bg-img divs ONLY within the hero slider we just populated
-          $heroSliderContainer.find('.slide-item .bg-img').each(function () {
-              const $bgDiv = $(this);
-              const $img = $bgDiv.children('img');
-              if ($img.length > 0) {
-                  const imgSrc = $img.attr('src');
-                  const $parentSlide = $bgDiv.parent(); // Get the .slide-item
+    // --- BACKGROUND IMAGE FIX START ---
+    // Re-run the background image logic specifically for the newly added hero slides
+    const $heroSliderContainer = $('#hero-slider-container');
+    if ($heroSliderContainer.length > 0) {
+      // Find the .bg-img divs ONLY within the hero slider we just populated
+      $heroSliderContainer.find('.slide-item .bg-img').each(function () {
+        const $bgDiv = $(this);
+        const $img = $bgDiv.children('img');
+        if ($img.length > 0) {
+          const imgSrc = $img.attr('src');
+          const $parentSlide = $bgDiv.parent(); // Get the .slide-item
 
-                  if (imgSrc) {
-                     // Apply styles to the parent slide item
-                      $parentSlide.css({
-                          'background-image': 'url(' + imgSrc + ')',
-                          'background-size': 'cover',
-                          'background-position': 'center center' // Ensure positioning
-                      });
-                      // Add the necessary class to the parent slide item if not already there
-                      if (!$parentSlide.hasClass('bg-img')) { // Check to avoid duplicates if CSS adds it
-                           $parentSlide.addClass('bg-img');
-                      }
-                      // Remove the original .bg-img div containing the img tag
-                      $bgDiv.remove();
-                      console.log("Applied background for slide:", imgSrc);
-                  } else {
-                      console.warn("Found .bg-img div but img src was empty.");
-                      $bgDiv.remove(); // Remove empty container
-                  }
-              } else {
-                   console.warn("Found .bg-img div without an inner img tag.");
-                   $bgDiv.remove(); // Remove empty container
-              }
-          });
-      }
-      // --- BACKGROUND IMAGE FIX END ---
+          if (imgSrc) {
+            // Apply styles to the parent slide item
+            $parentSlide.css({
+              'background-image': 'url(' + imgSrc + ')',
+              'background-size': 'cover',
+              'background-position': 'center center' // Ensure positioning
+            });
+            // Add the necessary class to the parent slide item if not already there
+            if (!$parentSlide.hasClass('bg-img')) { // Check to avoid duplicates if CSS adds it
+              $parentSlide.addClass('bg-img');
+            }
+            // Remove the original .bg-img div containing the img tag
+            $bgDiv.remove();
+            console.log("Applied background for slide:", imgSrc);
+          } else {
+            console.warn("Found .bg-img div but img src was empty.");
+            $bgDiv.remove(); // Remove empty container
+          }
+        } else {
+          console.warn("Found .bg-img div without an inner img tag.");
+          $bgDiv.remove(); // Remove empty container
+        }
+      });
+    }
+    // --- BACKGROUND IMAGE FIX END ---
 
     // --- CAROUSEL FIX START ---
     // We need to explicitly re-initialize Slick carousels AFTER
@@ -989,117 +989,117 @@
     const $featuresSlider = $('#features-carousel-container');
     if ($featuresSlider.length > 0 && typeof $featuresSlider.slick === 'function') {
       const featureOptions = $featuresSlider.data('slick'); // Get options from data attribute
-       // Destroy if already initialized
+      // Destroy if already initialized
       if ($featuresSlider.hasClass('slick-initialized')) {
         $featuresSlider.slick('unslick');
       }
-       // Initialize with fetched content
+      // Initialize with fetched content
       $featuresSlider.slick(featureOptions);
       console.log("Features carousel re-initialized."); // <-- Check browser console for this message
     } else {
-       console.log("Features carousel element not found or Slick not loaded for it."); // <-- Or this one
+      console.log("Features carousel element not found or Slick not loaded for it."); // <-- Or this one
     }
 
     // 3. Re-initialize Work Process Carousel
     const $workProcessSlider = $('#work-process-steps-container');
-      if ($workProcessSlider.length > 0 && typeof $workProcessSlider.slick === 'function') {
-        const workProcessOptions = $workProcessSlider.data('slick'); // Get options
-        if ($workProcessSlider.hasClass('slick-initialized')) {
-          $workProcessSlider.slick('unslick'); // Destroy if needed
-        }
-        $workProcessSlider.slick(workProcessOptions); // Initialize
-        console.log("Work Process carousel re-initialized.");
-      } else {
-         console.log("Work Process carousel element not found or Slick not loaded for it.");
+    if ($workProcessSlider.length > 0 && typeof $workProcessSlider.slick === 'function') {
+      const workProcessOptions = $workProcessSlider.data('slick'); // Get options
+      if ($workProcessSlider.hasClass('slick-initialized')) {
+        $workProcessSlider.slick('unslick'); // Destroy if needed
       }
+      $workProcessSlider.slick(workProcessOptions); // Initialize
+      console.log("Work Process carousel re-initialized.");
+    } else {
+      console.log("Work Process carousel element not found or Slick not loaded for it.");
+    }
 
 
     // 4. Re-initialize Testimonials Carousel (Quote and Nav)
-          const $quoteSlider = $('#testimonials-l2-quote-slider');
-          const $navSlider = $('#testimonials-l2-nav-slider');
+    const $quoteSlider = $('#testimonials-l2-quote-slider');
+    const $navSlider = $('#testimonials-l2-nav-slider');
 
-          // Ensure both elements exist AND Slick function is available
-          if ($quoteSlider.length > 0 && $navSlider.length > 0 && typeof $.fn.slick === 'function') {
+    // Ensure both elements exist AND Slick function is available
+    if ($quoteSlider.length > 0 && $navSlider.length > 0 && typeof $.fn.slick === 'function') {
 
-          // --- Destroy any previous initializations ---
-          if ($quoteSlider.hasClass('slick-initialized')) {
-            try {
-              $quoteSlider.slick('unslick');
-              console.log("Existing quote slider unslicked.");
-            } catch (e) { console.error("Error unslicking quote slider:", e); }
-          }
-          if ($navSlider.hasClass('slick-initialized')) {
-              try {
-              $navSlider.slick('unslick');
-              console.log("Existing nav slider unslicked.");
-              } catch (e) { console.error("Error unslicking nav slider:", e); }
-          }
+      // --- Destroy any previous initializations ---
+      if ($quoteSlider.hasClass('slick-initialized')) {
+        try {
+          $quoteSlider.slick('unslick');
+          console.log("Existing quote slider unslicked.");
+        } catch (e) { console.error("Error unslicking quote slider:", e); }
+      }
+      if ($navSlider.hasClass('slick-initialized')) {
+        try {
+          $navSlider.slick('unslick');
+          console.log("Existing nav slider unslicked.");
+        } catch (e) { console.error("Error unslicking nav slider:", e); }
+      }
 
-          // --- Initialize Nav Slider FIRST ---
-          // (Sometimes initializing the 'nav' first helps linking)
-          console.log("Initializing nav slider...");
-          $navSlider.slick({
-            slidesToShow: 3,
-            slidesToScroll: 1,
-            asNavFor: '#testimonials-l2-quote-slider', // Target ID of quote slider
-            dots: false,
-            arrows: false,
-            focusOnSelect: true,
-            infinite: false, // Match original template setting
-            centerMode: false,
-              responsive: [ { breakpoint: 768, settings: { slidesToShow: 2 } }, { breakpoint: 480, settings: { slidesToShow: 1 } } ]
-          });
+      // --- Initialize Nav Slider FIRST ---
+      // (Sometimes initializing the 'nav' first helps linking)
+      console.log("Initializing nav slider...");
+      $navSlider.slick({
+        slidesToShow: 3,
+        slidesToScroll: 1,
+        asNavFor: '#testimonials-l2-quote-slider', // Target ID of quote slider
+        dots: false,
+        arrows: false,
+        focusOnSelect: true,
+        infinite: false, // Match original template setting
+        centerMode: false,
+        responsive: [{ breakpoint: 768, settings: { slidesToShow: 2 } }, { breakpoint: 480, settings: { slidesToShow: 1 } }]
+      });
 
-          // --- Initialize Quote Slider SECOND ---
-          console.log("Initializing quote slider...");
-          $quoteSlider.slick({
-            slidesToShow: 1,
-            slidesToScroll: 1,
-            arrows: false,
-            fade: false, // Set to false as per original template structure
-            asNavFor: '#testimonials-l2-nav-slider' // Target ID of nav slider
-          });
+      // --- Initialize Quote Slider SECOND ---
+      console.log("Initializing quote slider...");
+      $quoteSlider.slick({
+        slidesToShow: 1,
+        slidesToScroll: 1,
+        arrows: false,
+        fade: false, // Set to false as per original template structure
+        asNavFor: '#testimonials-l2-nav-slider' // Target ID of nav slider
+      });
 
-          console.log("Testimonials quote and nav carousels re-initialized and linked.");
+      console.log("Testimonials quote and nav carousels re-initialized and linked.");
 
-        } else {
-            console.log("Testimonials carousel elements (#testimonials-l2-quote-slider or #testimonials-l2-nav-slider) not found, or Slick function is not available.");
+    } else {
+      console.log("Testimonials carousel elements (#testimonials-l2-quote-slider or #testimonials-l2-nav-slider) not found, or Slick function is not available.");
+    }
+    // --- End Testimonials Re-init ---
+
+
+    // 5. Re-initialize Gallery Carousel & Popup
+    const $gallerySlider = $('#gallery-carousel-container');
+    if ($gallerySlider.length > 0 && typeof $.fn.slick === 'function' && typeof $.fn.magnificPopup === 'function') {
+
+      // Re-init Slick Carousel
+      const galleryOptions = $gallerySlider.data('slick'); // Get options
+      if ($gallerySlider.hasClass('slick-initialized')) {
+        try { $gallerySlider.slick('unslick'); } catch (e) { } // Destroy if needed
+      }
+      $gallerySlider.slick(galleryOptions); // Initialize Slick
+      console.log("Gallery carousel re-initialized.");
+
+      // Re-init Magnific Popup for the new gallery items
+      $gallerySlider.magnificPopup({
+        delegate: 'a.popup-gallery-item', // Target the links inside the slider
+        type: 'image',
+        tLoading: 'Loading image #%curr%...',
+        mainClass: 'mfp-img-mobile',
+        gallery: {
+          enabled: true,
+          navigateByImgClick: true,
+          preload: [0, 1] // Will preload 0 - before current, and 1 after current image
+        },
+        image: {
+          tError: '<a href="%url%">The image #%curr%</a> could not be loaded.'
         }
-          // --- End Testimonials Re-init ---
+      });
+      console.log("Magnific Popup re-initialized for gallery.");
 
-
-        // 5. Re-initialize Gallery Carousel & Popup
-        const $gallerySlider = $('#gallery-carousel-container');
-        if ($gallerySlider.length > 0 && typeof $.fn.slick === 'function' && typeof $.fn.magnificPopup === 'function') {
-          
-          // Re-init Slick Carousel
-          const galleryOptions = $gallerySlider.data('slick'); // Get options
-          if ($gallerySlider.hasClass('slick-initialized')) {
-              try { $gallerySlider.slick('unslick'); } catch(e){} // Destroy if needed
-          }
-          $gallerySlider.slick(galleryOptions); // Initialize Slick
-          console.log("Gallery carousel re-initialized.");
-
-          // Re-init Magnific Popup for the new gallery items
-          $gallerySlider.magnificPopup({
-            delegate: 'a.popup-gallery-item', // Target the links inside the slider
-            type: 'image',
-            tLoading: 'Loading image #%curr%...',
-            mainClass: 'mfp-img-mobile',
-            gallery: {
-                enabled: true,
-                navigateByImgClick: true,
-                preload: [0, 1] // Will preload 0 - before current, and 1 after current image
-            },
-            image: {
-                tError: '<a href="%url%">The image #%curr%</a> could not be loaded.'
-            }
-          });
-          console.log("Magnific Popup re-initialized for gallery.");
-
-        } else {
-            console.log("Gallery carousel element not found, or Slick/Magnific Popup function not available.");
-        }
+    } else {
+      console.log("Gallery carousel element not found, or Slick/Magnific Popup function not available.");
+    }
 
     // Add similar blocks here if/when you make other carousels dynamic
 
@@ -1114,82 +1114,82 @@
     // $(".preloader").remove(); // Ensure preloader is removed even on error
   });
 
-  });
+});
 
 // })();
 
 
 // --- CONTACT FORM HANDLING FOR CONTACT LAYOUT 5 ---
-const form = document.getElementById('form'); 
-const resultDiv = document.getElementById('contact-form-result'); 
-const submitButton = document.getElementById('contact-l5-form-button'); 
+const form = document.getElementById('form');
+const resultDiv = document.getElementById('contact-form-result');
+const submitButton = document.getElementById('contact-l5-form-button');
 
 // Check if all elements were found
 if (form && resultDiv && submitButton) {
-    const originalButtonHtml = submitButton.innerHTML; 
+  const originalButtonHtml = submitButton.innerHTML;
 
-    form.addEventListener('submit', function(e) {
-        e.preventDefault(); // Prevent default submission
-        const formData = new FormData(form);
-        const object = Object.fromEntries(formData);
-        const json = JSON.stringify(object);
-        resultDiv.innerHTML = ""; // Clear previous message
-        resultDiv.style.display = "block"; // Make sure it's visible
-        submitButton.disabled = true;
-        submitButton.innerHTML = `
+  form.addEventListener('submit', function (e) {
+    e.preventDefault(); // Prevent default submission
+    const formData = new FormData(form);
+    const object = Object.fromEntries(formData);
+    const json = JSON.stringify(object);
+    resultDiv.innerHTML = ""; // Clear previous message
+    resultDiv.style.display = "block"; // Make sure it's visible
+    submitButton.disabled = true;
+    submitButton.innerHTML = `
             <span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>
             <span>Submitting...</span> 
         `;
 
-        fetch('https://api.web3forms.com/submit', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json'
-                },
-                body: json
-            })
-            .then(async (response) => {
-                let jsonResponse = await response.json();
-                if (response.status == 200 && jsonResponse.success) {
-                    // --- UI Update: Success ---
-                    resultDiv.innerHTML = `
+    fetch('https://api.web3forms.com/submit', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: json
+    })
+      .then(async (response) => {
+        let jsonResponse = await response.json();
+        if (response.status == 200 && jsonResponse.success) {
+          // --- UI Update: Success ---
+          resultDiv.innerHTML = `
                         <div class="alert alert-success mt-3" role="alert">
                             <strong>Success!</strong> ${'Your Request was submitted successfully.'}
                         </div>
                     `;
-                    form.reset(); 
-                    setTimeout(() => {
-                        resultDiv.style.display = "none";
-                        resultDiv.innerHTML = ""; // Clear content as well
-                    }, 3000);
-                } else {
-                    console.error("Submission failed:", jsonResponse);
-                    resultDiv.innerHTML = `
+          form.reset();
+          setTimeout(() => {
+            resultDiv.style.display = "none";
+            resultDiv.innerHTML = ""; // Clear content as well
+          }, 3000);
+        } else {
+          console.error("Submission failed:", jsonResponse);
+          resultDiv.innerHTML = `
                         <div class="alert alert-danger mt-3" role="alert">
                             <strong>Error!</strong> ${jsonResponse.message || 'Something went wrong.'}
                         </div>
                     `;
-                }
-            })
-            .catch(error => {
-                console.error("Network/Fetch Error:", error);
-                resultDiv.innerHTML = `
+        }
+      })
+      .catch(error => {
+        console.error("Network/Fetch Error:", error);
+        resultDiv.innerHTML = `
                     <div class="alert alert-danger mt-3" role="alert">
                         <strong>Error!</strong> Could not reach server. Please try again.
                     </div>
                 `;
-            })
-            .finally(() => {
-                submitButton.disabled = false;
-                submitButton.innerHTML = originalButtonHtml;
-            });
-    });
+      })
+      .finally(() => {
+        submitButton.disabled = false;
+        submitButton.innerHTML = originalButtonHtml;
+      });
+  });
 
 } else {
-    // Log an error if any essential element is missing
-    console.error("Could not find all required form elements (form, result div, or submit button). Form UI enhancements disabled.");
-    if (!form) console.error("Missing: form#form");
-    if (!resultDiv) console.error("Missing: div#contact-form-result");
-    if (!submitButton) console.error("Missing: button#contact-l5-form-button");
+  // Log an error if any essential element is missing
+  console.error("Could not find all required form elements (form, result div, or submit button). Form UI enhancements disabled.");
+  if (!form) console.error("Missing: form#form");
+  if (!resultDiv) console.error("Missing: div#contact-form-result");
+  if (!submitButton) console.error("Missing: button#contact-l5-form-button");
 }
